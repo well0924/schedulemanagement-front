@@ -1,9 +1,8 @@
+import LoginForm from "../components/member/LoginForm";
 
 
 export default function MemberLoginPage() {
     return <>
-        <div>
-        
-        </div>
+        <LoginForm></LoginForm>
     </>
 }

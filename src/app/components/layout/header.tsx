@@ -55,6 +55,20 @@ export default function Header() {
           </button>
         </Link>
 
+        <Link href={"/member/join"}>
+          <button className={`px-3 py-1 text-sm rounded transition-colors duration-200
+          ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-300 text-black hover:bg-gray-400"}`}>
+            회원가입
+          </button>
+        </Link>
+
+        <Link href={"/member"}>
+          <button className={`px-3 py-1 text-sm rounded transition-colors duration-200
+          ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-300 text-black hover:bg-gray-400"}`}>
+            로그인
+          </button>
+        </Link>
+
         <button className={`px-3 py-1 text-sm rounded transition-colors duration-200
           ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-300 text-black hover:bg-gray-400"}`}>
           로그아웃
