@@ -1,6 +1,7 @@
 'use client'
 
 import { useDarkModeContext } from "@/app/context/DarkModeContext";
+import { MemberJoin } from "@/app/utile/api/MemberApi";
 import { useState } from "react";
 
 export default function SignUpForm() {
@@ -39,7 +40,7 @@ export default function SignUpForm() {
         return null;
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const validationMessage = validate();
 
@@ -49,7 +50,15 @@ export default function SignUpForm() {
         }
 
         console.log(form);
-        // 👉 TODO: 회원가입 요청 보내기
+
+        try {
+            await MemberJoin(form);
+            alert("회원가입 성공! 로그인 페이지로 이동합니다.");
+            window.location.href = "/login"; // 페이지 이동
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (err:any) {
+            setError(err.message || "회원가입 중 오류가 발생했습니다.");
+        }
     };
 
     return (

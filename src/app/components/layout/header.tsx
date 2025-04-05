@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import NotificationBell from "../notification/NotificationBell";
+import { useAuth } from "@/app/utile/context/AuthContext";
 
 export default function Header() {
   const [isDark, setIsDark] = useState(false);
+  const { isLoggedIn, logout } = useAuth();
 
   useEffect(() => {
     // 마운트 시 다크모드 클래스 유무 확인
@@ -37,42 +39,47 @@ export default function Header() {
       </Link>
       <div className="flex gap-2">
         {/*알림*/}
-        <NotificationBell />
+        {isLoggedIn && <NotificationBell />}
 
         <button className={`px-3 py-1 text-sm rounded transition-colors duration-200
           ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-100 text-black hover:bg-gray-200"}`}>
           카테고리
         </button>
+        {isLoggedIn ? (
+          <>
+            {/* 로그인한 경우 */}
+            <Link href="/mypage">
+              <button className={`px-3 py-1 text-sm rounded transition-colors duration-200
+                ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-300 text-black hover:bg-gray-400"}`}>
+                마이페이지
+              </button>
+            </Link>
 
-        <button className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors duration-200">
-          AI 추천
-        </button>
+            <button
+              onClick={logout} // ✅ 로그아웃 버튼 클릭 시 logout 함수 호출
+              className={`px-3 py-1 text-sm rounded transition-colors duration-200
+                ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-300 text-black hover:bg-gray-400"}`}>
+              로그아웃
+            </button>
+          </>
+        ) : (
+          <>
+            {/* 로그인 안한 경우 */}
+            <Link href="/member/join">
+              <button className={`px-3 py-1 text-sm rounded transition-colors duration-200
+                ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-300 text-black hover:bg-gray-400"}`}>
+                회원가입
+              </button>
+            </Link>
 
-        <Link href="/mypage">
-          <button className={`px-3 py-1 text-sm rounded transition-colors duration-200
-            ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-300 text-black hover:bg-gray-400"}`}>
-            마이페이지
-          </button>
-        </Link>
-
-        <Link href={"/member/join"}>
-          <button className={`px-3 py-1 text-sm rounded transition-colors duration-200
-          ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-300 text-black hover:bg-gray-400"}`}>
-            회원가입
-          </button>
-        </Link>
-
-        <Link href={"/member"}>
-          <button className={`px-3 py-1 text-sm rounded transition-colors duration-200
-          ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-300 text-black hover:bg-gray-400"}`}>
-            로그인
-          </button>
-        </Link>
-
-        <button className={`px-3 py-1 text-sm rounded transition-colors duration-200
-          ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-300 text-black hover:bg-gray-400"}`}>
-          로그아웃
-        </button>
+            <Link href="/member">
+              <button className={`px-3 py-1 text-sm rounded transition-colors duration-200
+                ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-300 text-black hover:bg-gray-400"}`}>
+                로그인
+              </button>
+            </Link>
+          </>
+        )}
       </div>
     </header>
   );

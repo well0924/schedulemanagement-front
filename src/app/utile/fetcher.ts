@@ -1,3 +1,5 @@
+import { checkAndReissueToken } from "./context/AuthHelper";
+
 export interface FetcherOptions extends Omit<RequestInit, "headers"> {
     token?: string;           // 토큰 직접 지정 (기본: localStorage)
     autoJson?: boolean;       // JSON 자동 파싱 여부 (기본: true)
@@ -17,26 +19,43 @@ export async function fetcher<T>(
         ...restOptions
     } = options;
 
-    // 기본 헤더 구성
-    const finalHeaders: Record<string, string> = {
-        ...headers,
+    const makeRequest = async (currentToken: string) => {
+        const finalHeaders: Record<string, string> = {
+            ...headers,
+        };
+
+        if (!(restOptions.body instanceof FormData)) {
+            finalHeaders["Content-Type"] = "application/json";
+        }
+
+        if (currentToken) {
+            finalHeaders["Authorization"] = `Bearer ${currentToken}`;
+        }
+
+        return fetch(url, {
+            headers: finalHeaders,
+            ...restOptions,
+        });
     };
 
-    // FormData가 아닐 때만 Content-Type 지정
-    if (!(restOptions.body instanceof FormData)) {
-        finalHeaders["Content-Type"] = "application/json";
+    let response = await makeRequest(token);
+
+    // 401 Unauthorized → 토큰 재발급 시도
+    if (response.status === 401) {
+        try {
+            const newAccessToken = await checkAndReissueToken();
+            if (newAccessToken) {
+                response = await makeRequest(newAccessToken); // 새 토큰으로 재요청
+            } else {
+                throw new Error("토큰 재발급 실패");
+            }
+        } catch (error) {
+            console.error("토큰 재발급 및 재요청 실패", error);
+            throw new Error("인증 실패. 다시 로그인 해주세요.");
+        }
     }
 
-    // 토큰 있을 경우 Authorization 설정
-    if (token) {
-        finalHeaders["Authorization"] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(url, {
-        headers: finalHeaders,
-        ...restOptions,
-    });
-
+    // 최종 응답 체크
     if (!response.ok) {
         let message = `API Error: ${response.status}`;
 
@@ -44,7 +63,6 @@ export async function fetcher<T>(
             const data = await response.json();
             message = data?.message || JSON.stringify(data);
         } catch (error: unknown) {
-            // JSON 파싱 실패했을 때 fallback 메시지 설정
             if (!silent) {
                 console.warn("[fetcher] 응답을 JSON으로 파싱하지 못했습니다.");
                 console.warn(error);

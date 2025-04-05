@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "./components/layout/header";
 import Footer from "./components/layout/footer";
 import { DarkModeProvider } from "./context/DarkModeContext";
+import { AuthProvider } from "./utile/context/AuthContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,15 +24,17 @@ export const metadata: Metadata = {
 export default function RootLayout({ children, }: Readonly<{ children: React.ReactNode; }>) {
   return (
     <html lang="ko">
-      <DarkModeProvider>
-        <body className={`
+      <AuthProvider>
+        <DarkModeProvider>
+          <body className={`
           ${geistSans.variable} ${geistMono.variable} antialiased 
         `}>
-          <Header />
-          <main className="min-h-screen px-4 sm:px-6 lg:px-8 py-6">{children}</main>
-          <Footer />
-        </body>
-      </DarkModeProvider>
+            <Header />
+            <main className="min-h-screen px-4 sm:px-6 lg:px-8 py-6">{children}</main>
+            <Footer />
+          </body>
+        </DarkModeProvider>
+      </AuthProvider>
     </html>
   );
 }

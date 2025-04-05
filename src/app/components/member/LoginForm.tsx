@@ -1,6 +1,7 @@
 'use client'
 
 import { useDarkModeContext } from "@/app/context/DarkModeContext";
+import { fetchLogin } from "@/app/utile/api/LoginApi";
 import { useState } from "react";
 
 
@@ -14,13 +15,31 @@ export default function LoginForm() {
         setError(""); // 입력 시 에러 초기화
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!form.userId.trim() || !form.password.trim()) {
             setError("아이디와 비밀번호를 모두 입력해주세요.");
             return;
         }
         console.log({form});
+
+        try {
+            const response = await fetchLogin({
+                userId: form.userId,
+                password: form.password,
+            });
+
+            // 토큰 저장
+            localStorage.setItem("accessToken", response.accessToken);
+            localStorage.setItem("refreshToken", response.refreshToken);
+
+            // 메인 페이지로 이동
+            alert('로그인이 되었습니다.');
+            location.href='/';
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (err: any) {
+            setError(err.message || "로그인에 실패했습니다.");
+        }
     };
 
     return (
@@ -56,8 +75,7 @@ export default function LoginForm() {
 
                 <button
                     type="submit"
-                    className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded transition-colors"
-                >
+                    className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded transition-colors">
                     로그인
                 </button>
             </form>
