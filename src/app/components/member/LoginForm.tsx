@@ -15,13 +15,17 @@ export default function LoginForm() {
         setError(""); // 입력 시 에러 초기화
     };
 
+    const handleSocialLogin = (provider: string) => {
+        window.location.href = `http://localhost:8082/oauth2/authorization/${provider}`;
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!form.userId.trim() || !form.password.trim()) {
             setError("아이디와 비밀번호를 모두 입력해주세요.");
             return;
         }
-        console.log({form});
+        console.log({ form });
 
         try {
             const response = await fetchLogin({
@@ -35,8 +39,8 @@ export default function LoginForm() {
 
             // 메인 페이지로 이동
             alert('로그인이 되었습니다.');
-            location.href='/';
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            location.href = '/';
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             setError(err.message || "로그인에 실패했습니다.");
         }
@@ -51,6 +55,7 @@ export default function LoginForm() {
                     <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">아이디</label>
                     <input
                         type="text"
+                        name="userId" 
                         value={form.userId}
                         onChange={handleChange}
                         className="w-full border px-3 py-2 rounded text-sm dark:bg-gray-700 dark:text-white"
@@ -62,13 +67,14 @@ export default function LoginForm() {
                     <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">비밀번호</label>
                     <input
                         type="password"
+                        name="password"
                         value={form.password}
                         onChange={handleChange}
                         className="w-full border px-3 py-2 rounded text-sm dark:bg-gray-700 dark:text-white"
                         placeholder="비밀번호를 입력하세요"
                     />
                 </div>
-                
+
                 {error && (
                     <p className="text-sm text-red-500 mt-2">{error}</p>
                 )}
@@ -77,6 +83,14 @@ export default function LoginForm() {
                     type="submit"
                     className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded transition-colors">
                     로그인
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => handleSocialLogin('google')}
+                    className="w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded transition-colors mb-2"
+                >
+                    Google로 로그인
                 </button>
             </form>
         </div>
