@@ -3,7 +3,7 @@ import { fetcher } from "../fetcher";
 
 //회원 가입 
 export async function MemberJoin(data: MebmerRequest):Promise<MemberResponse> {
-    return fetcher<MemberResponse>("/api/member",{
+    return fetcher<MemberResponse>("/api/member/",{
         method: "POST",
         body: JSON.stringify(data),
     });
@@ -26,7 +26,7 @@ export async function MemberUpdate(id:number,data:MebmerRequest):Promise<MemberR
 
 //회원 탈퇴
 export async function MemberDelete(id:number):Promise<void>{
-    fetcher<void>(`/api/mebmer/${id}`,{
+    return await fetcher<void>(`/api/member/${id}`,{
         method:'DELETE'
     })
 }
