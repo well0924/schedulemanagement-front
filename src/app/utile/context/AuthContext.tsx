@@ -7,7 +7,7 @@ import {
   useState,
   ReactNode
 } from "react";
-import { fetchTokenReissue } from "../api/LoginApi";
+import { fetchLogout, fetchTokenReissue, fetchUserIdFromServer } from "../api/LoginApi";
 
 interface AuthContextType {
   accessToken: string | null;
@@ -15,6 +15,7 @@ interface AuthContextType {
   logout: () => void;
   isLoggedIn: boolean;
   checkAndReissueToken: () => Promise<string | null>;
+  fetchUserId: () => Promise<number | null>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthContextType>({
   logout: () => { },
   isLoggedIn: false,
   checkAndReissueToken: async () => null,
+  fetchUserId: async () => null,
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -39,7 +41,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setAccessToken(accessToken);
   };
 
-  const logout = () => {
+  const logout = async () => {
+
+    try {
+      await fetchLogout(); // 서버에 로그아웃 요청
+    } catch (err) {
+      console.warn("서버 로그아웃 실패 (무시하고 클라이언트 로그아웃만 진행)", err);
+    }
+
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     setAccessToken(null);
@@ -64,10 +73,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // userId를 서버에서 가져오는 함수
+  const fetchUserId = async (): Promise<number | null> => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      return null;
+    }
+
+    try {
+      const userId = await fetchUserIdFromServer(token); // 서버에서 userId 가져오기
+      return userId;
+    } catch (error) {
+      console.error("userId를 가져오는 중 오류 발생:", error);
+      return null;
+    }
+  };
+
   const isLoggedIn = !!accessToken;
 
   return (
-    <AuthContext.Provider value={{ accessToken, login, logout, isLoggedIn, checkAndReissueToken }}>
+    <AuthContext.Provider value={{ accessToken, login, logout, isLoggedIn, checkAndReissueToken ,fetchUserId}}>
       {children}
     </AuthContext.Provider>
   );

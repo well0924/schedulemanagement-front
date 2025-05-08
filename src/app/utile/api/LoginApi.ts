@@ -13,9 +13,12 @@ export async function fetchLogin(data: LoginRequest): Promise<LoginResponse> {
 //로그아웃
 export async function fetchLogout(): Promise<void> {
     const token = localStorage.getItem("accessToken") || "";
-    await fetcher("/api/auth/log-out", {
+    console.log(token);
+    await fetch("http://localhost:8082/api/auth/log-out", {
         method: "POST",
-        token, // fetcher 내부에서 Authorization 붙음
+        headers: {
+            Authorization: token, // Bearer 없이 보낸다고 했지?
+        },
     });
 }
 
@@ -25,4 +28,20 @@ export async function fetchTokenReissue(refreshTokenDto: { refreshToken: string 
         method: "POST",
         body: JSON.stringify(refreshTokenDto),
     });
+}
+
+export async function fetchUserIdFromServer(accessToken: string): Promise<number> {
+    const response = await fetch("http://localhost:8082/api/auth/user-id", {
+        method: "GET",
+        headers: {
+            Authorization: accessToken, // Bearer 없이 보낸다고 했지?
+        },
+    });
+
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`API Error: ${response.status} - ${text}`);
+    }
+
+    return response.json(); // 서버에서 Long 반환하면 number로 변환됨
 }

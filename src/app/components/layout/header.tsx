@@ -56,7 +56,7 @@ export default function Header() {
             </Link>
 
             <button
-              onClick={logout} // ✅ 로그아웃 버튼 클릭 시 logout 함수 호출
+              onClick={logout} // 로그아웃 버튼 클릭 시 logout 함수 호출
               className={`px-3 py-1 text-sm rounded transition-colors duration-200
                 ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-300 text-black hover:bg-gray-400"}`}>
               로그아웃

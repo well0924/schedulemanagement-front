@@ -1,79 +1,88 @@
 'use client';
 
+import { Notification } from '@/app/interfaces/notification/NotificationModel';
+import { getNotifications, getUnreadNotifications } from '@/app/utile/api/NotificationApi';
+import { useAuth } from '@/app/utile/context/AuthContext';
 import { useState, useRef, useEffect } from 'react';
-
-type NoticeType = 'SCHEDULE_CREATED' |
-    'SCHEDULE_REMINDER' |
-    'SCHEDULE_UPDATED' |
-    'SCHEDULE_DELETED' |
-    'SCHEDULE_OVERDUE' |
-    'SCHEDULE_COMPLETED' |
-    'SCHEDULE_REPEATED' |
-    'SYSTEM_ANNOUNCEMENT' |
-    'CUSTOM_NOTIFICATION' |
-    'TAG_MENTION';
-
-interface Notification {
-    id: number;
-    message: string;
-    noticeType: NoticeType;
-    isRead: boolean;
-}
 
 export default function NotificationBell() {
     const [open, setOpen] = useState(false);
-    const [notifications, setNotifications] = useState<Notification[]>([
-        { id: 1, message: "새로운 일정이 등록되었습니다.", noticeType: 'SCHEDULE_COMPLETED', isRead: false },
-        { id: 2, message: "오늘 14:00 회의가 곧 시작됩니다.", noticeType: 'SCHEDULE_REMINDER', isRead: false },
-        { id: 3, message: "서버 점검 예정입니다.", noticeType: 'SYSTEM_ANNOUNCEMENT' , isRead: false },
-    ]);
-
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [unreadCount, setUnreadCount] = useState<number>(0);
+    const { accessToken, fetchUserId } = useAuth();
     const bellRef = useRef<HTMLDivElement>(null);
 
-    // 바깥 클릭 시 닫기
+    const [userId, setUserId] = useState<number | null>(null);
+
+    // 사용자 ID를 받아오는 로직
     useEffect(() => {
-        const handleClickOutside = (e: MouseEvent) => {
-            if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
-                setOpen(false);
+        const getUserId = async () => {
+            try {
+                const id = await fetchUserId(); // 서버에서 userId 가져오기
+                if (id !== null) {
+                    setUserId(id);
+                }
+            } catch (e) {
+                console.error("userId 가져오기 실패:", e);
             }
         };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
-    const handleRead = (id: number) => {
+        if (accessToken) {
+            getUserId();
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [accessToken]);
+
+    // 알림 불러오기
+    useEffect(() => {
+        if (userId === null) return;
+
+        const fetchNotifications = async () => {
+            try {
+                const allNotifications = await getNotifications(userId);
+                const unreadNotifications = await getUnreadNotifications(userId);
+                setNotifications(allNotifications);
+                setUnreadCount(unreadNotifications.length);
+            } catch (error) {
+                console.error("알림을 불러오는 중 오류 발생:", error);
+            }
+        };
+
+        fetchNotifications();
+    }, [userId]);
+
+    const handleRead = async (id: number) => {
         setNotifications((prev) =>
             prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
         );
+        setUnreadCount(prev => Math.max(0, prev - 1));
+        // TODO: 서버 반영 필요
     };
 
-    const renderIcon = (type: NoticeType) => {
+    const renderIcon = (type: string) => {
         switch (type) {
-            case 'SCHEDULE_COMPLETED': return '📅';
-            case 'SCHEDULE_REMINDER': return '⚠️';
-            case 'SCHEDULE_OVERDUE': return '🚨';
-            case 'SYSTEM_ANNOUNCEMENT': return '💻';
-            case 'CUSTOM_NOTIFICATION': return 'ℹ️';
+            case 'SCHEDULE_CREATED': return '🗓️';
+            case 'SCHEDULE_UPDATED': return '📝';
+            case 'SCHEDULE_DELETED': return '❌';
+            case 'SCHEDULE_COMPLETED': return '✅';
+            case 'SCHEDULE_REPEATED': return '🔄';
             default: return '🔔';
         }
     };
 
-    const renderColor = (type: NoticeType) => {
+    const renderColor = (type: string) => {
         switch (type) {
             case 'SCHEDULE_REMINDER': return 'text-red-500';
-            case 'SCHEDULE_OVERDUE': return 'text-orange-500';
             case 'SCHEDULE_COMPLETED': return 'text-blue-600';
-            case 'SYSTEM_ANNOUNCEMENT': return 'text-gray-500';
-            case 'CUSTOM_NOTIFICATION': return 'text-sky-500';
+            case 'SCHEDULE_UPDATED': return 'text-yellow-500';
+            case 'SCHEDULE_DELETED': return 'text-gray-500';
+            case 'SCHEDULE_REPEATED': return 'text-green-500';
             default: return 'text-black';
         }
     };
 
-    const unreadCount = notifications.filter(n => !n.isRead).length;
-
     return (
         <div ref={bellRef} className="relative">
-            {/* 알림 버튼 */}
             <button
                 onClick={() => setOpen(!open)}
                 className="text-gray-700 hover:text-blue-600 relative"
@@ -87,30 +96,28 @@ export default function NotificationBell() {
                 )}
             </button>
 
-            {/* 드롭다운 알림 목록 */}
             {open && (
                 <div className="absolute right-0 mt-2 w-72 bg-white shadow-md border rounded z-50">
                     <div className="p-3 text-sm font-semibold border-b">📢 알림 목록</div>
-
                     <ul className="max-h-60 overflow-y-auto text-sm divide-y">
-                        {unreadCount === 0 && (
+                        {unreadCount === 0 ? (
                             <li className="p-4 text-center text-gray-400">알림이 없습니다.</li>
+                        ) : (
+                            notifications
+                                .filter((n) => !n.isRead)
+                                .map((n) => (
+                                    <li
+                                        key={n.id}
+                                        className="px-4 py-2 flex gap-2 items-start cursor-pointer hover:bg-gray-100"
+                                        onClick={() => handleRead(n.id)}
+                                    >
+                                        <span>{renderIcon(n.noticeType)}</span>
+                                        <span className={`${renderColor(n.noticeType)} text-sm`}>
+                                            {n.message}
+                                        </span>
+                                    </li>
+                                ))
                         )}
-
-                        {notifications
-                            .filter((n) => !n.isRead)
-                            .map((n) => (
-                                <li
-                                    key={n.id}
-                                    className="px-4 py-2 flex gap-2 items-start cursor-pointer hover:bg-gray-100"
-                                    onClick={() => handleRead(n.id)}
-                                >
-                                    <span>{renderIcon(n.noticeType)}</span>
-                                    <span className={`${renderColor(n.noticeType)} text-sm`}>
-                                        {n.message}
-                                    </span>
-                                </li>
-                            ))}
                     </ul>
                 </div>
             )}

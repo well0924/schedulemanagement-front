@@ -10,7 +10,10 @@ export type NoticeType =
 //알림 dto
 export interface Notification {
     id: number;
+    userId: number;
     message: string;
+    scheduledAt: Date;
     noticeType: NoticeType;
     isRead: boolean;
+    isSent: boolean;
 }
