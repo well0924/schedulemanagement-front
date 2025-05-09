@@ -1,5 +1,5 @@
 import { MebmerRequest, MemberResponse } from "@/app/interfaces/member/MemberModel";
-import { fetcher } from "../fetcher";
+import { fetcher } from "./fetcher";
 
 //회원 가입 
 export async function MemberJoin(data: MebmerRequest):Promise<MemberResponse> {

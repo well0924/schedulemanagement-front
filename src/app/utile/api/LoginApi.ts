@@ -1,5 +1,5 @@
 import { LoginRequest, LoginResponse } from "@/app/interfaces/Login/LoginModel";
-import { fetcher } from "../fetcher";
+import { fetcher } from "./fetcher";
 
 
 //로그인 

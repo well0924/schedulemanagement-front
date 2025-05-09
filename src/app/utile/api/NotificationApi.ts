@@ -1,5 +1,5 @@
 import { Notification } from "@/app/interfaces/notification/NotificationModel";
-import { fetcher } from "../fetcher";
+import { fetcher } from "./fetcher";
 
 
 // 알림 전체 목록 가져오기 (최신순)

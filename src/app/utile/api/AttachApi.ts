@@ -1,5 +1,5 @@
 import { AttachResponse } from "@/app/interfaces/attach/Attach";
-import { fetcher } from "../fetcher";
+import { fetcher } from "./fetcher";
 
 // 전체 파일 조회
 export async function getAllAttachments() {
