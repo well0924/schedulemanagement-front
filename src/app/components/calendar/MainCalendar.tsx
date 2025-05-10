@@ -2,83 +2,215 @@
 
 import 'react-calendar/dist/Calendar.css';
 import '@/app/styles/calendar.css';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css';
-import { useDarkModeContext } from '@/app/context/DarkModeContext';
+import { useDarkModeContext } from '@/app/utile/context/DarkModeContext';
+import { ScheduleAllList } from '@/app/utile/api/ScheduleApi';
+import { ScheduleRequest } from '@/app/interfaces/calendar/calendarModel';
+import { DndContext } from '@dnd-kit/core';
 
 interface calendarSchedule {
-  date: Date;
+  id: number;
   title: string;
+  startTime: string;
+  endTime: string;
+  color: string;
 }
 
-export default function ScheduleCalendar() {
-  const [value, setValue] = useState<Date>(new Date());
-  const { isDark } = useDarkModeContext();
+interface Props {
+  newSchedule?: ScheduleRequest;
+}
 
-  const schedules: calendarSchedule[] = [
-    { date: new Date(2025, 3, 1), title: '회의' },
-    { date: new Date(2025, 3, 1), title: '스터디' },
-    { date: new Date(2025, 3, 3), title: '운동' },
+export default function ScheduleCalendar({ newSchedule }: Props) {
+  const [value, setValue] = useState<Date>(new Date());
+  const [schedules, setSchedules] = useState<calendarSchedule[]>([]);
+  const { isDark } = useDarkModeContext();
+  const colorPalette = [
+    'bg-blue-500', 'bg-red-500', 'bg-green-500',
+    'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500',
   ];
-  
-  const matchedSchedules = schedules.filter(
-    (s) =>
-      s.date.getFullYear() === value.getFullYear() &&
-      s.date.getMonth() === value.getMonth() &&
-      s.date.getDate() === value.getDate()
-  );
+
+  const assignColor = (id: number) => colorPalette[id % colorPalette.length];
+
+  useEffect(() => {
+    const fetchSchedules = async () => {
+      try {
+        const data = await ScheduleAllList();
+        const mapped = data.map(item => ({
+          id: item.id,
+          title: item.contents,
+          startTime: item.startTime,
+          endTime: item.endTime,
+          color: assignColor(item.id)
+        }));
+        setSchedules(mapped);
+      } catch (e) {
+        console.error('일정 불러오기 실패:', e);
+      }
+    };
+    fetchSchedules();
+  }, []);
+
+  useEffect(() => {
+    if (newSchedule) {
+      setSchedules(prev => [
+        ...prev,
+        {
+          id: Date.now(),
+          title: newSchedule.contents,
+          startTime: newSchedule.startTime,
+          endTime: newSchedule.endTime,
+          color: assignColor(Date.now()),
+        },
+      ]);
+    }
+  }, [newSchedule]);
+
+  const handleDragStart = (
+    event: React.DragEvent<HTMLElement>,
+    id: number,
+    color: string,
+    draggedStartTime: string
+  ) => {
+    event.dataTransfer.setData('scheduleId', id.toString());
+    event.dataTransfer.setData('color', color);
+    event.dataTransfer.setData('draggedStartTime', draggedStartTime);
+    event.dataTransfer.effectAllowed = 'move';
+  };
+
+  const isSameDay = (d1: Date, d2: Date) =>
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate();
+
+  const handleDrop = async (event: React.DragEvent<HTMLDivElement>, dropDate: Date) => {
+    const scheduleId = Number(event.dataTransfer.getData('scheduleId'));
+    const color = event.dataTransfer.getData('color');
+    const draggedStartStr = event.dataTransfer.getData('draggedStartTime');
+    if (!draggedStartStr) return;
+
+    const draggedStart = new Date(draggedStartStr);
+
+    setSchedules(prev =>
+      prev.map(s => {
+        if (s.id !== scheduleId) return s;
+        const start = new Date(s.startTime);
+        const end = new Date(s.endTime);
+        let newStart = start;
+        let newEnd = end;
+
+        if (isSameDay(draggedStart, start)) {
+          newStart = dropDate;
+        } else if (isSameDay(draggedStart, end)) {
+          newEnd = dropDate;
+        } else {
+          return s;
+        }
+
+        if (newStart > newEnd) return s;
+
+        return {
+          ...s,
+          startTime: newStart.toISOString(),
+          endTime: newEnd.toISOString(),
+          color,
+        };
+      })
+    );
+  };
+
+  const matchedSchedules = schedules.filter(s => {
+    const d = new Date(value.getFullYear(), value.getMonth(), value.getDate());
+    const start = new Date(s.startTime);
+    const end = new Date(s.endTime);
+    return d >= new Date(start.getFullYear(), start.getMonth(), start.getDate()) &&
+      d <= new Date(end.getFullYear(), end.getMonth(), end.getDate());
+  });
 
   return (
-    <div className={`w-full p-6 rounded shadow transition-colors ${
-      isDark ? 'bg-gray-800 text-white' : 'bg-white text-black'
-    }`}>
-      <Calendar
-        className={`w-full text-base ${
-          isDark ? 'dark-calendar' : ''
-        }`}
-        onChange={(date) => setValue(date as Date)}
-        value={value}
-        locale="ko-KR"
-        calendarType="gregory"
-        onClickDay={(date) => setValue(date)}
-        tileContent={({ date, view }) =>
-          view === 'month' &&
-          schedules.some(
-            (s) =>
-              s.date.getFullYear() === date.getFullYear() &&
-              s.date.getMonth() === date.getMonth() &&
-              s.date.getDate() === date.getDate()
-          ) ? (
-            <div className="text-blue-500 text-xs text-center mt-1">●</div>
-          ) : null
-        }
-      />
+    <DndContext>
+      <div className={`w-full p-6 rounded shadow transition-colors ${isDark ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}>
+        <Calendar
+          className={`w-full text-base ${isDark ? 'dark-calendar' : ''}`}
+          onChange={(date) => setValue(date as Date)}
+          value={value}
+          locale="ko-KR"
+          calendarType="gregory"
+          onClickDay={(date) => setValue(date)}
+          tileContent={({ date, view }) => {
+            if (view !== 'month') return null;
 
-      <p className="mt-4 text-sm text-gray-600">
-        선택한 날짜: {value.toLocaleDateString('ko-KR', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        })}
-      </p>
+            const daySchedules = schedules.filter((s) => {
+              const start = new Date(s.startTime);
+              const end = new Date(s.endTime);
+              const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+              return d >= new Date(start.getFullYear(), start.getMonth(), start.getDate()) &&
+                d <= new Date(end.getFullYear(), end.getMonth(), end.getDate());
+            });
 
-      {matchedSchedules.length > 0 ? (
-        <div className={`mt-2 p-4 rounded ${
-          isDark ? 'bg-gray-700' : 'bg-gray-50'
-        }`}>
-          <h3 className="text-sm font-semibold mb-2">
-            일정 목록:
-          </h3>
-          <ul className="text-sm space-y-1">
-            {matchedSchedules.map((s, idx) => (
-              <li key={idx}>📌 {s.title}</li>
-            ))}
-          </ul>
-        </div>
-      ) : (
-        <p className="mt-2 text-sm text-gray-400">이 날은 일정이 없습니다.</p>
-      )}
-    </div>
+            return (
+              <div className="relative w-full h-full">
+                <div className="flex flex-col gap-[2px] mt-5 items-center relative z-10">
+                  {daySchedules.slice(0, 3).map((s) => {
+                    const current = new Date(date);
+                    const start = new Date(s.startTime);
+                    const end = new Date(s.endTime);
+
+                    const isStart = isSameDay(current, start);
+                    const isEnd = isSameDay(current, end);
+                    const canDrag = isStart || isEnd;
+                    const draggedDate = isStart ? s.startTime : isEnd ? s.endTime : '';
+
+                    return (
+                      <div
+                        key={s.id + draggedDate}
+                        draggable={canDrag}
+                        onDragStart={(e) =>
+                          canDrag && handleDragStart(e, s.id, s.color, draggedDate)
+                        }
+                        className={`h-[2px] w-4 rounded-full ${s.color} cursor-move`}
+                        title={`${s.title} (${s.startTime.split('T')[0]} ~ ${s.endTime.split('T')[0]})`}
+                      />
+                    );
+                  })}
+                </div>
+                <div
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => handleDrop(e, date)}
+                  className="absolute inset-0 z-0"
+                />
+              </div>
+            );
+          }}
+        />
+
+        <p className="mt-4 text-sm text-gray-600">
+          선택한 날짜: {value.toLocaleDateString('ko-KR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          })}
+        </p>
+
+        {matchedSchedules.length > 0 ? (
+          <div className={`mt-2 p-4 rounded ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
+            <h3 className="text-sm font-semibold mb-2">일정 목록:</h3>
+            <ul className="text-sm space-y-1">
+              {matchedSchedules.map((s) => (
+                <li
+                  key={s.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, s.id, s.color, s.startTime)}
+                >
+                  📌 {s.title}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-gray-400">이 날은 일정이 없습니다.</p>
+        )}
+      </div>
+    </DndContext>
   );
 }
