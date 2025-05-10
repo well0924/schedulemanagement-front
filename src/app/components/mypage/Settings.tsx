@@ -1,4 +1,4 @@
-import { useDarkModeContext } from "@/app/context/DarkModeContext";
+import { useDarkModeContext } from "@/app/utile/context/DarkModeContext";
 
 interface Props {
     notifications: boolean;

@@ -3,6 +3,7 @@
 import { Notification } from '@/app/interfaces/notification/NotificationModel';
 import { getNotifications, getUnreadNotifications } from '@/app/utile/api/NotificationApi';
 import { useAuth } from '@/app/utile/context/AuthContext';
+import { connectNotificationWS } from '@/app/utile/websocket/websokcet';
 import { useState, useRef, useEffect } from 'react';
 
 export default function NotificationBell() {
@@ -30,7 +31,7 @@ export default function NotificationBell() {
         if (accessToken) {
             getUserId();
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [accessToken]);
 
     // 알림 불러오기
@@ -51,12 +52,28 @@ export default function NotificationBell() {
         fetchNotifications();
     }, [userId]);
 
+    // WebSocket 연결 추가
+    useEffect(() => {
+        if (!userId || !accessToken) return;
+
+        const client = connectNotificationWS(userId, accessToken, (newNotification) => {
+            setNotifications((prev) => [newNotification, ...prev]);
+            setUnreadCount((prev) => prev + 1);
+        });
+
+        return () => {
+            client?.disconnect();
+        };
+    }, [userId, accessToken]);
+
+
     const handleRead = async (id: number) => {
         setNotifications((prev) =>
             prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
         );
         setUnreadCount(prev => Math.max(0, prev - 1));
         // TODO: 서버 반영 필요
+        
     };
 
     const renderIcon = (type: string) => {

@@ -1,4 +1,5 @@
-import { AttachResponse } from "../Attach";
+import { AttachResponse } from "../attach/Attach";
+
 
 
 export interface Schedule {
@@ -32,13 +33,13 @@ export interface ScheduleResponse {
     userId: number;
     categoryId: number;
     progressStatus: {
-        value: "COMPLETE" | "IN_COMPLETE"; 
+        value: "COMPLETE" | "IN_COMPLETE";
     };
     repeatType: 'NONE' | 'DAILY' | 'MONTHLY' | 'YEARS';
     repeatCount: number;
     createdBy: string;
-    createdTime: string; 
+    createdTime: string;
     updatedBy: string;
-    updatedTime: string; 
+    updatedTime: string;
     attachFiles: AttachResponse[];//첨부파일
 }
