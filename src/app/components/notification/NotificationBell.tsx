@@ -1,7 +1,7 @@
 'use client';
 
 import { Notification } from '@/app/interfaces/notification/NotificationModel';
-import { getNotifications, getUnreadNotifications } from '@/app/utile/api/NotificationApi';
+import { getNotifications, getUnreadNotifications, isMarkedRead } from '@/app/utile/api/NotificationApi';
 import { useAuth } from '@/app/utile/context/AuthContext';
 import { connectNotificationWS } from '@/app/utile/websocket/websokcet';
 import { useState, useRef, useEffect } from 'react';
@@ -41,6 +41,7 @@ export default function NotificationBell() {
         const fetchNotifications = async () => {
             try {
                 const allNotifications = await getNotifications(userId);
+                console.log("📦 전체 알림", allNotifications); // 👈 확인
                 const unreadNotifications = await getUnreadNotifications(userId);
                 setNotifications(allNotifications);
                 setUnreadCount(unreadNotifications.length);
@@ -68,12 +69,19 @@ export default function NotificationBell() {
 
 
     const handleRead = async (id: number) => {
-        setNotifications((prev) =>
-            prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-        );
-        setUnreadCount(prev => Math.max(0, prev - 1));
-        // TODO: 서버 반영 필요
-        
+        try {
+            // 1. 클라이언트 상태 업데이트
+            setNotifications((prev) =>
+                prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+            );
+            setUnreadCount(prev => Math.max(0, prev - 1));
+    
+            // 2. 서버 상태 반영
+            await isMarkedRead(id); // 여기를 실제 API로 요청
+    
+        } catch (e) {
+            console.error('알림 읽음 처리 실패:', e);
+        }
     };
 
     const renderIcon = (type: string) => {

@@ -11,3 +11,15 @@ export async function getNotifications(userId: number): Promise<Notification[]> 
 export async function getUnreadNotifications(userId: number): Promise<Notification[]> {
     return fetcher<Notification[]>(`/api/notice/unread/${userId}`);
 }
+
+
+// 알림 목록을 읽기로 변경하기.
+export async function isMarkedRead(id: number): Promise<void>{
+    return fetcher<void>(`/api/notice/${id}/read`,{
+        method:'PATCH',
+        autoJson:false,
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
+}
