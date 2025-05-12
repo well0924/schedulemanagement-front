@@ -10,7 +10,7 @@ export async function getCategoryList() {
 
 //카테고리 추가
 export async function CategoryCreate(data: CategoryRequest): Promise<CategoryResponse> {
-    return fetcher<CategoryResponse>("/api/category", {
+    return fetcher<CategoryResponse>("/api/category/", {
         method: "POST",
         body: JSON.stringify(data),
     })
