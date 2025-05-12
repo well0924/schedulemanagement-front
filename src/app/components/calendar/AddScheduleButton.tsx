@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import AddScheduleModal from "./AddScheduleModal";
-import { ScheduleRequest } from "@/app/interfaces/calendar/calendarModel";
+import { ScheduleRequest } from "@/app/utile/interfaces/calendar/calendarModel";
 
 interface Props {
     onScheduleAdd: (newSchedule: ScheduleRequest) => void;

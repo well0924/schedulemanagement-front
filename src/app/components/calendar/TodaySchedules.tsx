@@ -1,5 +1,5 @@
 import { useDarkModeContext } from "@/app/utile/context/DarkModeContext";
-import { ScheduleResponse } from "@/app/interfaces/calendar/calendarModel";
+import { ScheduleResponse } from "@/app/utile/interfaces/calendar/calendarModel";
 import { useState } from "react";
 
 

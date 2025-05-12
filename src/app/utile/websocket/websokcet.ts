@@ -1,6 +1,6 @@
 import SockJS from 'sockjs-client';
 import { Frame, Stomp } from '@stomp/stompjs';
-import { Notification } from '@/app/interfaces/notification/NotificationModel';
+import { Notification } from '@/app/utile/interfaces/notification/NotificationModel';
 
 export const connectNotificationWS = (
   userId: number | null,

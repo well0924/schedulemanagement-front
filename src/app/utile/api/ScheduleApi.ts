@@ -1,4 +1,4 @@
-import { ScheduleRequest, ScheduleResponse } from "@/app/interfaces/calendar/calendarModel";
+import { ScheduleRequest, ScheduleResponse } from "@/app/utile/interfaces/calendar/calendarModel";
 import { fetcher } from "./fetcher";
 
 // 전체 일정 조회

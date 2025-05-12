@@ -1,6 +1,6 @@
 'use client';
 
-import { ScheduleRequest, ScheduleResponse } from "@/app/interfaces/calendar/calendarModel";
+import { ScheduleRequest, ScheduleResponse } from "@/app/utile/interfaces/calendar/calendarModel";
 import { useEffect, useState } from "react";
 import TodaySchedule from "./calendar/TodaySchedules";
 import AddScheduleButton from "./calendar/AddScheduleButton";

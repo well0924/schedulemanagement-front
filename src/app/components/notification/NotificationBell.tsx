@@ -1,6 +1,6 @@
 'use client';
 
-import { Notification } from '@/app/interfaces/notification/NotificationModel';
+import { Notification } from '@/app/utile/interfaces/notification/NotificationModel';
 import { getNotifications, getUnreadNotifications, isMarkedRead } from '@/app/utile/api/NotificationApi';
 import { useAuth } from '@/app/utile/context/AuthContext';
 import { connectNotificationWS } from '@/app/utile/websocket/websokcet';

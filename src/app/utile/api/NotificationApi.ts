@@ -1,4 +1,4 @@
-import { Notification } from "@/app/interfaces/notification/NotificationModel";
+import { Notification } from "@/app/utile/interfaces/notification/NotificationModel";
 import { fetcher } from "./fetcher";
 
 

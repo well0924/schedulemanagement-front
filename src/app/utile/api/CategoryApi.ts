@@ -1,4 +1,4 @@
-import { CategoryRequest, CategoryResponse } from "@/app/interfaces/category/category";
+import { CategoryRequest, CategoryResponse } from "@/app/utile/interfaces/category/category";
 import { fetcher } from "./fetcher";
 
 //카테고리 목록

@@ -1,7 +1,7 @@
 'use client';
 
-import { ScheduleRequest } from '@/app/interfaces/calendar/calendarModel';
-import { CategoryResponse } from '@/app/interfaces/category/category';
+import { ScheduleRequest } from '@/app/utile/interfaces/calendar/calendarModel';
+import { CategoryResponse } from '@/app/utile/interfaces/category/category';
 import { completeFileUpload, getPresignedUploadUrls } from '@/app/utile/api/AttachApi';
 import { CategoryCreate, getCategoryList } from '@/app/utile/api/CategoryApi';
 import { fetchUserIdFromServer } from '@/app/utile/api/LoginApi';
