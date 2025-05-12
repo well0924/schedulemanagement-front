@@ -41,10 +41,6 @@ export default function Header() {
         {/*알림*/}
         {isLoggedIn && <NotificationBell />}
 
-        <button className={`px-3 py-1 text-sm rounded transition-colors duration-200
-          ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-100 text-black hover:bg-gray-200"}`}>
-          카테고리
-        </button>
         {isLoggedIn ? (
           <>
             {/* 로그인한 경우 */}
