@@ -1,4 +1,4 @@
-import { LoginRequest, LoginResponse } from "@/app/interfaces/Login/LoginModel";
+import { LoginRequest, LoginResponse } from "@/app/utile/interfaces/login/LoginModel";
 import { fetcher } from "./fetcher";
 
 

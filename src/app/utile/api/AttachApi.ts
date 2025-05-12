@@ -26,9 +26,10 @@ export async function getPresignedUploadUrls(fileNames: string[]) {
 
 // 다운로드용 presigned URL 발급
 export async function getPresignedDownloadUrl(id: number) {
-    return fetcher<string>(`/api/attach/${id}/presigned-download-url`, {
-        method: "GET",
-    });
+    const res = await fetch(`http://localhost:8082/api/attach/${id}/presigned-download-url`);
+    if (!res.ok) throw new Error("다운로드 URL 요청 실패");
+
+    return await res.text(); // ❗ text 그대로 받기
 }
 
 // 업로드 완료 후 등록 처리

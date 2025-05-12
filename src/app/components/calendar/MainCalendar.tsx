@@ -7,6 +7,7 @@ import Calendar from 'react-calendar';
 import { useDarkModeContext } from '@/app/utile/context/DarkModeContext';
 import { ScheduleAllList } from '@/app/utile/api/ScheduleApi';
 import { DndContext } from '@dnd-kit/core';
+import { useRouter } from "next/navigation";
 
 interface calendarSchedule {
   id: number;
@@ -29,11 +30,12 @@ export default function ScheduleCalendar({ reloadTrigger }: Props) {
   const [value, setValue] = useState<Date>(new Date());
   const [schedules, setSchedules] = useState<calendarSchedule[]>([]);
   const { isDark } = useDarkModeContext();
+  const router = useRouter();
 
   const assignColor = useCallback((id: number) => {
     return colorPalette[id % colorPalette.length];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [colorPalette]);
-  //const newId = Date.now() + Math.floor(Math.random() * 1000);
 
   useEffect(() => {
     const fetchSchedules = async () => {
@@ -51,7 +53,7 @@ export default function ScheduleCalendar({ reloadTrigger }: Props) {
         console.error('일정 불러오기 실패:', e);
       }
     };
-  
+
     fetchSchedules();
   }, [assignColor, reloadTrigger]);
 
@@ -140,7 +142,7 @@ export default function ScheduleCalendar({ reloadTrigger }: Props) {
             return (
               <div className="relative w-full h-full">
                 <div className="flex flex-col gap-[2px] mt-5 items-center relative z-10">
-                  {daySchedules.slice(0, 3).map((s,i) => {
+                  {daySchedules.slice(0, 3).map((s, i) => {
                     const current = new Date(date);
                     const start = new Date(s.startTime);
                     const end = new Date(s.endTime);
@@ -187,11 +189,16 @@ export default function ScheduleCalendar({ reloadTrigger }: Props) {
             <ul className="text-sm space-y-1">
               {matchedSchedules.map((s) => (
                 <li
-                  key={`${s.id}-${s.startTime}`} 
+                  key={`${s.id}-${s.startTime}`}
                   draggable
                   onDragStart={(e) => handleDragStart(e, s.id, s.color, s.startTime)}
                 >
-                  📌 {s.title}
+                  <span
+                    className="cursor-pointer hover:underline"
+                    onClick={() => router.push(`/calendar/${s.id}`)} // 라우팅으로 모달 열기
+                  >
+                    📌 {s.title}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -199,6 +206,7 @@ export default function ScheduleCalendar({ reloadTrigger }: Props) {
         ) : (
           <p className="mt-2 text-sm text-gray-400">이 날은 일정이 없습니다.</p>
         )}
+
       </div>
     </DndContext>
   );

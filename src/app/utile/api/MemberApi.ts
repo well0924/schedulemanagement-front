@@ -1,4 +1,4 @@
-import { MebmerRequest, MemberResponse } from "@/app/interfaces/member/MemberModel";
+import { MebmerRequest, MemberResponse } from "@/app/utile/interfaces/member/MemberModel";
 import { fetcher } from "./fetcher";
 
 //회원 가입 

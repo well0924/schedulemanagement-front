@@ -1,5 +1,8 @@
+'use client'
+
 import { useDarkModeContext } from "@/app/utile/context/DarkModeContext";
 import { ScheduleResponse } from "@/app/utile/interfaces/calendar/calendarModel";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 
@@ -9,8 +12,9 @@ interface Props {
     onEditSchedule?: (schedule: ScheduleResponse) => void;
 }
 
-export default function TodaySchedule({ schedules,onDeleteSchedules }: Props) {
+export default function TodaySchedule({ schedules, onDeleteSchedules }: Props) {
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const router = useRouter();
     const total = schedules.length;
     const completed = schedules.filter(s => s.progressStatus?.value === 'COMPLETE').length;
     const { isDark } = useDarkModeContext();
@@ -54,16 +58,19 @@ export default function TodaySchedule({ schedules,onDeleteSchedules }: Props) {
                             key={s.id}
                             className="flex flex-col lg:flex-row justify-between items-start lg:items-center"
                         >
-                            <label className="flex items-center gap-2">
+                            <div className="flex items-center gap-2">
                                 <input
                                     type="checkbox"
                                     checked={selectedIds.includes(s.id)}
                                     onChange={() => toggleSelection(s.id)}
                                 />
-                                <span>
+                                <span
+                                    onClick={() => router.push(`/calendar/${s.id}`)}
+                                    className="cursor-pointer hover:underline"
+                                >
                                     [{s.categoryId}] {s.contents} ({s.startTime})
                                 </span>
-                            </label>
+                            </div>
                             {s.progressStatus?.value === 'COMPLETE' ? (
                                 <span className="text-green-500">✔ 완료</span>
                             ) : (
