@@ -2,11 +2,10 @@
 
 import 'react-calendar/dist/Calendar.css';
 import '@/app/styles/calendar.css';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Calendar from 'react-calendar';
 import { useDarkModeContext } from '@/app/utile/context/DarkModeContext';
 import { ScheduleAllList } from '@/app/utile/api/ScheduleApi';
-import { ScheduleRequest } from '@/app/interfaces/calendar/calendarModel';
 import { DndContext } from '@dnd-kit/core';
 
 interface calendarSchedule {
@@ -18,19 +17,23 @@ interface calendarSchedule {
 }
 
 interface Props {
-  newSchedule?: ScheduleRequest;
+  reloadTrigger?: boolean; // 외부에서 갱신 트리거를 받기 위해 boolean
 }
 
-export default function ScheduleCalendar({ newSchedule }: Props) {
+const colorPalette = [
+  'bg-blue-500', 'bg-red-500', 'bg-green-500',
+  'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500',
+];
+
+export default function ScheduleCalendar({ reloadTrigger }: Props) {
   const [value, setValue] = useState<Date>(new Date());
   const [schedules, setSchedules] = useState<calendarSchedule[]>([]);
   const { isDark } = useDarkModeContext();
-  const colorPalette = [
-    'bg-blue-500', 'bg-red-500', 'bg-green-500',
-    'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500',
-  ];
 
-  const assignColor = (id: number) => colorPalette[id % colorPalette.length];
+  const assignColor = useCallback((id: number) => {
+    return colorPalette[id % colorPalette.length];
+  }, [colorPalette]);
+  //const newId = Date.now() + Math.floor(Math.random() * 1000);
 
   useEffect(() => {
     const fetchSchedules = async () => {
@@ -48,23 +51,9 @@ export default function ScheduleCalendar({ newSchedule }: Props) {
         console.error('일정 불러오기 실패:', e);
       }
     };
+  
     fetchSchedules();
-  }, []);
-
-  useEffect(() => {
-    if (newSchedule) {
-      setSchedules(prev => [
-        ...prev,
-        {
-          id: Date.now(),
-          title: newSchedule.contents,
-          startTime: newSchedule.startTime,
-          endTime: newSchedule.endTime,
-          color: assignColor(Date.now()),
-        },
-      ]);
-    }
-  }, [newSchedule]);
+  }, [assignColor, reloadTrigger]);
 
   const handleDragStart = (
     event: React.DragEvent<HTMLElement>,
@@ -151,7 +140,7 @@ export default function ScheduleCalendar({ newSchedule }: Props) {
             return (
               <div className="relative w-full h-full">
                 <div className="flex flex-col gap-[2px] mt-5 items-center relative z-10">
-                  {daySchedules.slice(0, 3).map((s) => {
+                  {daySchedules.slice(0, 3).map((s,i) => {
                     const current = new Date(date);
                     const start = new Date(s.startTime);
                     const end = new Date(s.endTime);
@@ -163,7 +152,7 @@ export default function ScheduleCalendar({ newSchedule }: Props) {
 
                     return (
                       <div
-                        key={s.id + draggedDate}
+                        key={`${s.id}-${draggedDate}-${i}`}
                         draggable={canDrag}
                         onDragStart={(e) =>
                           canDrag && handleDragStart(e, s.id, s.color, draggedDate)
@@ -198,7 +187,7 @@ export default function ScheduleCalendar({ newSchedule }: Props) {
             <ul className="text-sm space-y-1">
               {matchedSchedules.map((s) => (
                 <li
-                  key={s.id}
+                  key={`${s.id}-${s.startTime}`} 
                   draggable
                   onDragStart={(e) => handleDragStart(e, s.id, s.color, s.startTime)}
                 >

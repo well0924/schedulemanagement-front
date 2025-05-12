@@ -20,10 +20,14 @@ export interface ScheduleRequest {
     categoryId: number;
     repeatType: 'NONE' | 'DAILY' | 'MONTHLY' | 'YEARS';
     repeatCount: number;
-    attachIds: number[],
+    repeatInterval: number;
+    isAllDay: boolean;
+    scheduleType: 'ALL_DAY' | 'SINGLE_DAY' | 'MULTI_DAY'; 
+    attachIds: number[];
 }
 
 export interface ScheduleResponse {
+    status: string;
     id: number;
     contents: string;
     scheduleMonth: number;

@@ -70,5 +70,6 @@ export async function bulkDeleteSchedules(ids: number[]) {
     method: "POST",
     body: JSON.stringify(ids),
     headers: { "Content-Type": "application/json" },
+    autoJson: false,
   });
 }
