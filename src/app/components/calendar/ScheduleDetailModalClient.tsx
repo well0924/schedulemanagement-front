@@ -42,7 +42,7 @@ export default function ScheduleDetailModalClient() {
   };
 
   const handleEdit = (schedule: ScheduleResponse) => {
-    router.push(`/calendar/${schedule.id}/edit`);
+    router.push(`/calendar/${schedule.id}/edite`);
   };
 
   const handleClose = () => {

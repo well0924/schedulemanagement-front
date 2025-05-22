@@ -11,7 +11,7 @@ interface Props {
   onEdit: (schedule: ScheduleResponse) => void;
 }
 
-export default function ScheduleDetailModal({ schedule, onClose,onDelete,onEdit }: Props) {
+export default function ScheduleDetailModal({ schedule, onClose, onDelete, onEdit }: Props) {
   const formatDateTime = (dateStr: string) => {
     const d = new Date(dateStr);
     return d.toLocaleString('ko-KR', {
@@ -81,20 +81,20 @@ export default function ScheduleDetailModal({ schedule, onClose,onDelete,onEdit 
             )}
           </div>
         )}
-      </div>
-      <div className="mt-6 flex justify-end gap-2">
-        <button
-          onClick={() => onEdit(schedule)}
-          className="px-4 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          ✏️ 수정
-        </button>
-        <button
-          onClick={() => onDelete(schedule.id)}
-          className="px-4 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
-        >
-          🗑 삭제
-        </button>
+        <div className="mt-6 flex justify-end gap-2">
+          <button
+            onClick={() => onEdit(schedule)}
+            className="px-4 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            ✏️ 수정
+          </button>
+          <button
+            onClick={() => onDelete(schedule.id)}
+            className="px-4 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            🗑 삭제
+          </button>
+        </div>
       </div>
     </div >
   );
