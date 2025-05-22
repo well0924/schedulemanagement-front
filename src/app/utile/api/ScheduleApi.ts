@@ -57,6 +57,15 @@ export async function updateSchedule(id: number, data: ScheduleRequest) {
   });
 }
 
+//일정 상태 변경
+export async function updateScheduleStatus(scheduleId: number, status: "IN_COMPLETE" | "PROGRESS" | "COMPLETE") {
+  return fetch(`http://localhost:8082/api/schedule/status/${scheduleId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(status),
+  });
+}
+
 // 단일 일정 삭제
 export async function deleteSchedule(id: number, type: "SINGLE" | "ALL_REPEAT" | "AFTER_THIS" = "SINGLE") {
   return fetcher<string>(`/api/schedule/${id}?type=${type}`, {

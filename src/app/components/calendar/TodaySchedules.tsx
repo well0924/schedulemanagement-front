@@ -1,9 +1,10 @@
 'use client'
 
+import { updateScheduleStatus } from "@/app/utile/api/ScheduleApi";
 import { useDarkModeContext } from "@/app/utile/context/DarkModeContext";
 import { ScheduleResponse } from "@/app/utile/interfaces/calendar/calendarModel";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 
 interface Props {
@@ -12,12 +13,19 @@ interface Props {
     onEditSchedule?: (schedule: ScheduleResponse) => void;
 }
 
-export default function TodaySchedule({ schedules, onDeleteSchedules }: Props) {
+export default function TodaySchedule({ schedules, onDeleteSchedules, onEditSchedule }: Props) {
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [localSchedules, setLocalSchedules] = useState<ScheduleResponse[]>(schedules);
     const router = useRouter();
-    const total = schedules.length;
-    const completed = schedules.filter(s => s.progressStatus?.value === 'COMPLETE').length;
+    const total = localSchedules.length;
+    const completed = localSchedules.filter(s => s.progressStatus?.value === 'COMPLETE').length;
     const { isDark } = useDarkModeContext();
+
+    console.log(selectedIds);
+
+    useEffect(() => {
+        setLocalSchedules(schedules);
+    }, [schedules]);
 
     const toggleSelection = (id: number) => {
         setSelectedIds(prev =>
@@ -30,7 +38,31 @@ export default function TodaySchedule({ schedules, onDeleteSchedules }: Props) {
         if (typeof onDeleteSchedules === 'function') {
             onDeleteSchedules(selectedIds);
         }
+        setLocalSchedules(prev => prev.filter(s => !selectedIds.includes(s.id)));
         setSelectedIds([]);
+    };
+
+    const handleStatusChange = async (
+        schedule: ScheduleResponse,
+        newStatus: "IN_COMPLETE" | "PROGRESS" | "COMPLETE"
+    ) => {
+        try {
+            await updateScheduleStatus(schedule.id, newStatus);
+
+            const updated = { ...schedule, progressStatus: { value: newStatus } };
+
+            // 1. 외부 콜백 호출
+            if (typeof onEditSchedule === "function") {
+                onEditSchedule(updated);
+            }
+
+            // 2. 내부 상태 업데이트
+            setLocalSchedules(prev =>
+                prev.map(s => (s.id === updated.id ? updated : s))
+            );
+        } catch (err) {
+            console.error("상태 변경 실패:", err);
+        }
     };
 
     return (
@@ -50,10 +82,10 @@ export default function TodaySchedule({ schedules, onDeleteSchedules }: Props) {
                 </button>
             )}
             <ul className="space-y-2 text-sm">
-                {schedules.length === 0 ? (
+                {localSchedules.length === 0 ? (
                     <li className="text-gray-500">오늘의 일정이 없습니다.</li>
                 ) : (
-                    schedules.map((s) => (
+                    localSchedules.map((s) => (
                         <li
                             key={s.id}
                             className="flex flex-col lg:flex-row justify-between items-start lg:items-center"
@@ -71,11 +103,16 @@ export default function TodaySchedule({ schedules, onDeleteSchedules }: Props) {
                                     [{s.categoryId}] {s.contents} ({s.startTime})
                                 </span>
                             </div>
-                            {s.progressStatus?.value === 'COMPLETE' ? (
-                                <span className="text-green-500">✔ 완료</span>
-                            ) : (
-                                <span className="text-red-500">⏳ 미완료</span>
-                            )}
+                            <div className="flex items-center gap-2 mt-1 lg:mt-0">
+                                <select
+                                    value={s.progressStatus?.value || "IN_COMPLETE"}
+                                    onChange={(e) => handleStatusChange(s, e.target.value as "IN_COMPLETE" | "PROGRESS" | "COMPLETE")}
+                                    className="text-xs px-2 py-1 border rounded bg-white dark:bg-gray-700 text-black dark:text-white">
+                                    <option value="IN_COMPLETE">⏸ 미시작</option>
+                                    <option value="PROGRESS">⏳ 진행중</option>
+                                    <option value="COMPLETE">✔ 완료</option>
+                                </select>
+                            </div>
                         </li>
                     ))
                 )}

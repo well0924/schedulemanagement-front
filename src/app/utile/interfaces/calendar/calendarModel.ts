@@ -37,10 +37,13 @@ export interface ScheduleResponse {
     userId: number;
     categoryId: number;
     progressStatus: {
-        value: "COMPLETE" | "IN_COMPLETE";
+        value: "COMPLETE" |"PROGRESS" | "IN_COMPLETE";
     };
+    isAllDay:boolean;
+    repeatInterval: number;
     repeatType: 'NONE' | 'DAILY' | 'MONTHLY' | 'YEARS';
     repeatCount: number;
+    scheduleType: 'ALL_DAY' | 'SINGLE_DAY' | 'MULTI_DAY'; 
     createdBy: string;
     createdTime: string;
     updatedBy: string;
