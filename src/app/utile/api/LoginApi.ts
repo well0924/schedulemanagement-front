@@ -34,7 +34,7 @@ export async function fetchUserIdFromServer(accessToken: string): Promise<number
     const response = await fetch("http://localhost:8082/api/auth/user-id", {
         method: "GET",
         headers: {
-            Authorization: accessToken, // Bearer 없이 보낸다고 했지?
+            Authorization: accessToken, //
         },
     });
 
