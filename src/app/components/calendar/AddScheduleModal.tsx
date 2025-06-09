@@ -152,33 +152,6 @@ export default function AddScheduleModal({ isOpen, onClose, onScheduleAdd }: Pro
             return;
         }
 
-        const uploadedIds: number[] = [];
-
-        if (files) {
-            for (const file of Array.from(files)) {
-                try {
-                    const presignedRes = await fetch('/api/upload-url', {
-                        method: 'POST',
-                        body: JSON.stringify({ fileName: file.name }),
-                        headers: { 'Content-Type': 'application/json' },
-                    });
-
-                    const { url, id } = await presignedRes.json();
-
-                    await fetch(url, {
-                        method: 'PUT',
-                        body: file,
-                    });
-
-                    uploadedIds.push(id); // 여기서 attachId 수집
-                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                } catch (err) {
-                    alert("파일 업로드에 실패했습니다.");
-                    return;
-                }
-            }
-        }
-
         const attachIds = await handleFileUpload();
 
         const scheduleType = classifyScheduleType(startDateTime, endDateTime, isAllDay);

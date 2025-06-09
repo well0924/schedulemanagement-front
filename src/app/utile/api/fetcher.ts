@@ -7,7 +7,7 @@ export interface FetcherOptions extends Omit<RequestInit, "headers"> {
   headers?: Record<string, string>;
 }
 
-const API_BASE = "http://localhost:8082";
+const API_BASE = "https://api.schedulemanagement.site";
 
 export async function fetcher<T>(
   url: string,
