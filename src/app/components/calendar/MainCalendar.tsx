@@ -5,7 +5,7 @@ import '@/app/styles/calendar.css';
 import { useCallback, useEffect, useState } from 'react';
 import Calendar from 'react-calendar';
 import { useDarkModeContext } from '@/app/utile/context/DarkModeContext';
-import { ScheduleAllList } from '@/app/utile/api/ScheduleApi';
+import { bulkDeleteSchedules, ScheduleAllList } from '@/app/utile/api/ScheduleApi';
 import { DndContext } from '@dnd-kit/core';
 import { useRouter } from "next/navigation";
 
@@ -29,12 +29,15 @@ const colorPalette = [
 export default function ScheduleCalendar({ reloadTrigger }: Props) {
   const [value, setValue] = useState<Date>(new Date());
   const [schedules, setSchedules] = useState<calendarSchedule[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Record<number, boolean>>({});
+  const toggleSelect = (id: number) => setSelectedIds(prev => ({ ...prev, [id]: !prev[id] }));
+  const clearSelection = () => setSelectedIds({});
   const { isDark } = useDarkModeContext();
   const router = useRouter();
 
   const assignColor = useCallback((id: number) => {
     return colorPalette[id % colorPalette.length];
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [colorPalette]);
 
   useEffect(() => {
@@ -120,7 +123,10 @@ export default function ScheduleCalendar({ reloadTrigger }: Props) {
 
   return (
     <DndContext>
-      <div className={`w-full p-6 rounded shadow transition-colors ${isDark ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}>
+      <div
+        className={`w-full p-6 rounded shadow transition-colors ${isDark ? 'bg-gray-800 text-white' : 'bg-white text-black'
+          }`}
+      >
         <Calendar
           className={`w-full text-base ${isDark ? 'dark-calendar' : ''}`}
           onChange={(date) => setValue(date as Date)}
@@ -135,14 +141,16 @@ export default function ScheduleCalendar({ reloadTrigger }: Props) {
               const start = new Date(s.startTime);
               const end = new Date(s.endTime);
               const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-              return d >= new Date(start.getFullYear(), start.getMonth(), start.getDate()) &&
-                d <= new Date(end.getFullYear(), end.getMonth(), end.getDate());
+              return (
+                d >= new Date(start.getFullYear(), start.getMonth(), start.getDate()) &&
+                d <= new Date(end.getFullYear(), end.getMonth(), end.getDate())
+              );
             });
 
             return (
               <div className="relative w-full h-full">
-                <div className="flex flex-col gap-[2px] mt-5 items-center relative z-10">
-                  {daySchedules.slice(0, 3).map((s, i) => {
+                <div className="flex flex-col gap-[2px] mt-5 items-start relative z-10">
+                  {daySchedules.map((s, i) => {
                     const current = new Date(date);
                     const start = new Date(s.startTime);
                     const end = new Date(s.endTime);
@@ -150,18 +158,29 @@ export default function ScheduleCalendar({ reloadTrigger }: Props) {
                     const isStart = isSameDay(current, start);
                     const isEnd = isSameDay(current, end);
                     const canDrag = isStart || isEnd;
-                    const draggedDate = isStart ? s.startTime : isEnd ? s.endTime : '';
+                    const draggedDate = isStart
+                      ? s.startTime
+                      : isEnd
+                        ? s.endTime
+                        : '';
 
                     return (
                       <div
                         key={`${s.id}-${draggedDate}-${i}`}
                         draggable={canDrag}
                         onDragStart={(e) =>
-                          canDrag && handleDragStart(e, s.id, s.color, draggedDate)
+                          canDrag &&
+                          handleDragStart(e, s.id, s.color, draggedDate)
                         }
-                        className={`h-[2px] w-4 rounded-full ${s.color} cursor-move`}
-                        title={`${s.title} (${s.startTime.split('T')[0]} ~ ${s.endTime.split('T')[0]})`}
-                      />
+                        className="flex items-center gap-1 text-[10px] truncate cursor-pointer"
+                        title={`${s.title} (${s.startTime.split('T')[0]} ~ ${s.endTime.split('T')[0]
+                          })`}
+                      >
+                        <div
+                          className={`h-[6px] w-2 rounded-full ${s.color}`}
+                        />
+                        <span>{s.title || '(제목 없음)'}</span>
+                      </div>
                     );
                   })}
                 </div>
@@ -176,7 +195,8 @@ export default function ScheduleCalendar({ reloadTrigger }: Props) {
         />
 
         <p className="mt-4 text-sm text-gray-600">
-          선택한 날짜: {value.toLocaleDateString('ko-KR', {
+          선택한 날짜:{' '}
+          {value.toLocaleDateString('ko-KR', {
             year: 'numeric',
             month: 'long',
             day: 'numeric',
@@ -187,26 +207,68 @@ export default function ScheduleCalendar({ reloadTrigger }: Props) {
           <div className={`mt-2 p-4 rounded ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
             <h3 className="text-sm font-semibold mb-2">일정 목록:</h3>
             <ul className="text-sm space-y-1">
-              {matchedSchedules.map((s) => (
-                <li
-                  key={`${s.id}-${s.startTime}`}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, s.id, s.color, s.startTime)}
-                >
-                  <span
-                    className="cursor-pointer hover:underline"
-                    onClick={() => router.push(`/calendar/${s.id}`)} // 라우팅으로 모달 열기
-                  >
-                    📌 {s.title}
-                  </span>
-                </li>
-              ))}
+              {matchedSchedules.map((s) => {
+                const start = new Date(s.startTime);
+                const end = new Date(s.endTime);
+                const hhmm = (d: Date) =>
+                  `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+                const timeText = start.toDateString() === end.toDateString() && start.getTime() === end.getTime()
+                  ? '하루 종일'
+                  : `${hhmm(start)} ~ ${hhmm(end)}`;
+
+                return (
+                  <li key={`${s.id}-${s.startTime}`} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={!!selectedIds[s.id]}
+                      onChange={() => toggleSelect(s.id)}
+                    />
+                    <span
+                      className="cursor-pointer hover:underline"
+                      onClick={() => router.push(`/calendar/${s.id}`)}
+                      title={`${s.title}`}
+                    >
+                      📌 {s.title} <span className="text-gray-500">({timeText})</span>
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
+
+            <div className="mt-3 flex gap-2">
+              <button
+                className="px-3 py-1 bg-red-500 text-white text-sm rounded disabled:opacity-50"
+                disabled={Object.values(selectedIds).every(v => !v)}
+                onClick={async () => {
+                  const ids = Object.entries(selectedIds).filter(([, v]) => v).map(([k]) => Number(k));
+                  if (ids.length === 0) return;
+                  if (!confirm(`${ids.length}개 일정을 삭제할까요?`)) return;
+
+                  try {
+                    await bulkDeleteSchedules(ids);
+                    // 1) 화면의 전체 일정 상태에서 제거
+                    setSchedules(prev => prev.filter(s => !ids.includes(s.id)));
+                    // 2) 선택 해제
+                    clearSelection();
+                  } catch (e) {
+                    console.error('일정 선택삭제 실패:', e);
+                    alert('삭제 중 오류가 발생했습니다.');
+                  }
+                }}
+              >
+                선택 삭제
+              </button>
+              <button
+                className="px-3 py-1 border text-sm rounded"
+                onClick={clearSelection}
+              >
+                선택 해제
+              </button>
+            </div>
           </div>
         ) : (
           <p className="mt-2 text-sm text-gray-400">이 날은 일정이 없습니다.</p>
         )}
-
       </div>
     </DndContext>
   );
