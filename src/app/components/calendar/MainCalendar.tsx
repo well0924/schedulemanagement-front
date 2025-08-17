@@ -123,153 +123,175 @@ export default function ScheduleCalendar({ reloadTrigger }: Props) {
 
   return (
     <DndContext>
-      <div
-        className={`w-full p-6 rounded shadow transition-colors ${isDark ? 'bg-gray-800 text-white' : 'bg-white text-black'
-          }`}
-      >
-        <Calendar
-          className={`w-full text-base ${isDark ? 'dark-calendar' : ''}`}
-          onChange={(date) => setValue(date as Date)}
-          value={value}
-          locale="ko-KR"
-          calendarType="gregory"
-          onClickDay={(date) => setValue(date)}
-          tileContent={({ date, view }) => {
-            if (view !== 'month') return null;
+      <div className={`w-full p-4 md:p-6 rounded shadow transition-colors ${isDark ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}>
 
-            const daySchedules = schedules.filter((s) => {
-              const start = new Date(s.startTime);
-              const end = new Date(s.endTime);
-              const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-              return (
-                d >= new Date(start.getFullYear(), start.getMonth(), start.getDate()) &&
-                d <= new Date(end.getFullYear(), end.getMonth(), end.getDate())
-              );
-            });
+        {/* 헤더 */}
+        <div className="flex items-center justify-between mb-3 md:mb-4">
+          <h2 className="text-base md:text-lg font-semibold">
+            {value.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long' })}
+          </h2>
+        </div>
 
-            return (
-              <div className="relative w-full h-full">
-                <div className="flex flex-col gap-[2px] mt-5 items-start relative z-10">
-                  {daySchedules.map((s, i) => {
-                    const current = new Date(date);
-                    const start = new Date(s.startTime);
-                    const end = new Date(s.endTime);
+        {/* 캘린더 */}
+        <section className="min-w-0">
+          <Calendar
+            className={`w-full text-sm md:text-base ${isDark ? 'dark-calendar' : ''}`}
+            onChange={(date) => setValue(date as Date)}
+            value={value}
+            locale="ko-KR"
+            calendarType="gregory"
+            onClickDay={(date) => setValue(date)}
+            tileContent={({ date, view }) => {
+              if (view !== 'month') return null;
 
-                    const isStart = isSameDay(current, start);
-                    const isEnd = isSameDay(current, end);
-                    const canDrag = isStart || isEnd;
-                    const draggedDate = isStart
-                      ? s.startTime
-                      : isEnd
-                        ? s.endTime
-                        : '';
-
-                    return (
-                      <div
-                        key={`${s.id}-${draggedDate}-${i}`}
-                        draggable={canDrag}
-                        onDragStart={(e) =>
-                          canDrag &&
-                          handleDragStart(e, s.id, s.color, draggedDate)
-                        }
-                        className="flex items-center gap-1 text-[10px] truncate cursor-pointer"
-                        title={`${s.title} (${s.startTime.split('T')[0]} ~ ${s.endTime.split('T')[0]
-                          })`}
-                      >
-                        <div
-                          className={`h-[6px] w-2 rounded-full ${s.color}`}
-                        />
-                        <span>{s.title || '(제목 없음)'}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => handleDrop(e, date)}
-                  className="absolute inset-0 z-0"
-                />
-              </div>
-            );
-          }}
-        />
-
-        <p className="mt-4 text-sm text-gray-600">
-          선택한 날짜:{' '}
-          {value.toLocaleDateString('ko-KR', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          })}
-        </p>
-
-        {matchedSchedules.length > 0 ? (
-          <div className={`mt-2 p-4 rounded ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
-            <h3 className="text-sm font-semibold mb-2">일정 목록:</h3>
-            <ul className="text-sm space-y-1">
-              {matchedSchedules.map((s) => {
+              const daySchedules = schedules.filter((s) => {
                 const start = new Date(s.startTime);
                 const end = new Date(s.endTime);
-                const hhmm = (d: Date) =>
-                  `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-                const timeText = start.toDateString() === end.toDateString() && start.getTime() === end.getTime()
-                  ? '하루 종일'
-                  : `${hhmm(start)} ~ ${hhmm(end)}`;
-
+                const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
                 return (
-                  <li key={`${s.id}-${s.startTime}`} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={!!selectedIds[s.id]}
-                      onChange={() => toggleSelect(s.id)}
-                    />
-                    <span
-                      className="cursor-pointer hover:underline"
-                      onClick={() => router.push(`/calendar/${s.id}`)}
-                      title={`${s.title}`}
-                    >
-                      📌 {s.title} <span className="text-gray-500">({timeText})</span>
-                    </span>
-                  </li>
+                  d >= new Date(start.getFullYear(), start.getMonth(), start.getDate()) &&
+                  d <= new Date(end.getFullYear(), end.getMonth(), end.getDate())
                 );
-              })}
-            </ul>
+              });
 
-            <div className="mt-3 flex gap-2">
-              <button
-                className="px-3 py-1 bg-red-500 text-white text-sm rounded disabled:opacity-50"
-                disabled={Object.values(selectedIds).every(v => !v)}
-                onClick={async () => {
-                  const ids = Object.entries(selectedIds).filter(([, v]) => v).map(([k]) => Number(k));
-                  if (ids.length === 0) return;
-                  if (!confirm(`${ids.length}개 일정을 삭제할까요?`)) return;
+              // 시작시간 오름차순
+              daySchedules.sort((a, b) =>
+                new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+              );
 
-                  try {
-                    await bulkDeleteSchedules(ids);
-                    // 1) 화면의 전체 일정 상태에서 제거
-                    setSchedules(prev => prev.filter(s => !ids.includes(s.id)));
-                    // 2) 선택 해제
-                    clearSelection();
-                  } catch (e) {
-                    console.error('일정 선택삭제 실패:', e);
-                    alert('삭제 중 오류가 발생했습니다.');
-                  }
-                }}
-              >
-                선택 삭제
-              </button>
-              <button
-                className="px-3 py-1 border text-sm rounded"
-                onClick={clearSelection}
-              >
-                선택 해제
-              </button>
+              // 터치 환경에서 드래그 비활성
+              const isTouchDevice =
+                typeof window !== 'undefined' &&
+                ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+
+              return (
+                <div className="cal-cell relative w-full h-full" onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => handleDrop(e, date)}>
+                  <div className="cal-events flex flex-col gap-[2px] mt-5 items-start relative z-10">
+                    {daySchedules.map((s, i) => {
+                      const current = new Date(date);
+                      const start = new Date(s.startTime);
+                      const end = new Date(s.endTime);
+                      const isStart = isSameDay(current, start);
+                      const isEnd = isSameDay(current, end);
+                      const canDrag = !isTouchDevice && (isStart || isEnd);
+                      const draggedDate = isStart ? s.startTime : isEnd ? s.endTime : '';
+
+                      return (
+                        <div
+                          key={`${s.id}-${draggedDate}-${i}`}
+                          draggable={canDrag}
+                          onDragStart={(e) =>
+                            canDrag && handleDragStart(e, s.id, s.color, draggedDate)
+                          }
+                          className="flex items-center gap-1 text-[10px] md:text-[11px] truncate cursor-pointer"
+                          title={`${s.title} (${s.startTime.split('T')[0]} ~ ${s.endTime.split('T')[0]})`}
+                        >
+                          <div className={`h-[6px] w-2 rounded-full ${s.color}`} />
+                          <span className="max-w-[95%] md:max-w-[90%] truncate">
+                            {s.title || '(제목 없음)'}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => handleDrop(e, date)}
+                    className="absolute inset-0 z-0"
+                  />
+                </div>
+              );
+            }}
+          />
+        </section>
+
+        {/* 상세/목록 (항상 아래) */}
+        <section className={`min-w-0 mt-4 ${matchedSchedules.length ? '' : 'opacity-80'}`}>
+          <p className="text-sm text-gray-600">
+            선택한 날짜: {value.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}
+          </p>
+
+          {matchedSchedules.length > 0 ? (
+            <div className={`mt-2 p-3 md:p-4 rounded border ${isDark ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'}`}>
+              <h3 className="text-sm md:text-base font-semibold mb-2">
+                일정 목록 ({matchedSchedules.length})
+              </h3>
+
+              <div className="max-h-64 md:max-h-[60vh] overflow-auto pr-1">
+                <ul className="text-sm space-y-1">
+                  {matchedSchedules.map((s) => {
+                    const start = new Date(s.startTime);
+                    const end = new Date(s.endTime);
+                    const hhmm = (d: Date) =>
+                      `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+                    const isAllDay = start.getTime() === end.getTime();
+                    const timeText = isAllDay ? '하루 종일' : `${hhmm(start)} ~ ${hhmm(end)}`;
+
+                    return (
+                      <li
+                        key={`${s.id}-${s.startTime}`}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, s.id, s.color, s.startTime)}
+                        className="flex items-center gap-2"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={!!selectedIds[s.id]}
+                          onChange={() => toggleSelect(s.id)}
+                          className="h-4 w-4"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/calendar/${s.id}`)}
+                          className="flex-1 text-left hover:underline"
+                          title={s.title}
+                        >
+                          <span className="inline-block mr-1 align-middle">📌</span>
+                          <span className="align-middle">{s.title}</span>
+                          <span className="ml-1 text-gray-500 align-middle">({timeText})</span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  className="px-3 py-1 bg-red-500 text-white text-sm rounded disabled:opacity-50"
+                  disabled={Object.values(selectedIds).every(v => !v)}
+                  onClick={async () => {
+                    const ids = Object.entries(selectedIds).filter(([, v]) => v).map(([k]) => Number(k));
+                    if (ids.length === 0) return;
+                    if (!confirm(`${ids.length}개 일정을 삭제할까요?`)) return;
+                    try {
+                      await bulkDeleteSchedules(ids);
+                      setSchedules(prev => prev.filter(s => !ids.includes(s.id)));
+                      clearSelection();
+                    } catch (e) {
+                      console.error('일정 선택삭제 실패:', e);
+                      alert('삭제 중 오류가 발생했습니다.');
+                    }
+                  }}
+                >
+                  선택 삭제
+                </button>
+                <button
+                  className="px-3 py-1 border text-sm rounded"
+                  onClick={clearSelection}
+                >
+                  선택 해제
+                </button>
+              </div>
             </div>
-          </div>
-        ) : (
-          <p className="mt-2 text-sm text-gray-400">이 날은 일정이 없습니다.</p>
-        )}
+          ) : (
+            <p className="mt-2 text-sm text-gray-400">이 날은 일정이 없습니다.</p>
+          )}
+        </section>
       </div>
     </DndContext>
   );
+
 }
