@@ -32,8 +32,7 @@ export default function Header() {
   }, []);
 
   return (
-    <header className={`h-16 shadow flex justify-between items-center px-6 transition-colors duration-300
-      ${isDark ? "bg-gray-800 text-white" : "bg-white text-black"}`}>
+    <header className={`h-16 shadow flex justify-between items-center px-6 transition-colors duration-300 ${isDark ? "bg-gray-800 text-white" : "bg-white text-black"}`}>
       <Link href={"/"}>
         <h1 className="text-xl font-bold">Schedule.AI</h1>
       </Link>

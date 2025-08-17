@@ -13,7 +13,7 @@ export const connectNotificationWS = (
     return null; // 연결 안 함
   }
 
-  const socket = new SockJS('http://localhost:8080/ws');
+  const socket = new SockJS('https://api.schedulemanagement.site:8080/ws');
   const stompClient = Stomp.over(socket);
 
   const connectHeaders: Record<string, string> = {

@@ -82,6 +82,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       const userId = await fetchUserIdFromServer(token); // 서버에서 userId 가져오기
+      console.log("userID:"+userId);
       return userId;
     } catch (error) {
       console.error("userId를 가져오는 중 오류 발생:", error);

@@ -17,7 +17,7 @@ export async function fetchLogout(): Promise<void> {
     await fetch("http://localhost:8082/api/auth/log-out", {
         method: "POST",
         headers: {
-            Authorization: token, // Bearer 없이 보낸다고 했지?
+            Authorization: token,
         },
     });
 }
@@ -31,13 +31,13 @@ export async function fetchTokenReissue(refreshTokenDto: { refreshToken: string 
 }
 
 export async function fetchUserIdFromServer(accessToken: string): Promise<number> {
-    const response = await fetch("http://localhost:8082/api/auth/user-id", {
+    const response = await fetch("https:/api.schedulemanagement.site/api/auth/user-id", {
         method: "GET",
         headers: {
             Authorization: accessToken, //
         },
     });
-
+    console.log(response);
     if (!response.ok) {
         const text = await response.text();
         throw new Error(`API Error: ${response.status} - ${text}`);
