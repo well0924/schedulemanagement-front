@@ -62,7 +62,7 @@ export async function updateScheduleStatus(scheduleId: number, status: "IN_COMPL
   return fetch(`https://api.schedulemanagement.site/api/schedule/status/${scheduleId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(status),
+    body: JSON.stringify({ value: status }),
   });
 }
 
