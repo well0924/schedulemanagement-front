@@ -8,6 +8,7 @@ import { useDarkModeContext } from '@/app/utile/context/DarkModeContext';
 import { bulkDeleteSchedules, ScheduleAllList } from '@/app/utile/api/ScheduleApi';
 import { DndContext } from '@dnd-kit/core';
 import { useRouter } from "next/navigation";
+import { createPortal } from 'react-dom';
 
 interface calendarSchedule {
   id: number;
@@ -18,13 +19,16 @@ interface calendarSchedule {
 }
 
 interface Props {
-  reloadTrigger?: boolean; // 외부에서 갱신 트리거를 받기 위해 boolean
+  reloadTrigger?: boolean;
 }
 
 const colorPalette = [
   'bg-blue-500', 'bg-red-500', 'bg-green-500',
   'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500',
 ];
+
+const pad = (n: number) => n.toString().padStart(2, '0');
+const fmtHM = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 
 export default function ScheduleCalendar({ reloadTrigger }: Props) {
   const [value, setValue] = useState<Date>(new Date());
@@ -34,6 +38,9 @@ export default function ScheduleCalendar({ reloadTrigger }: Props) {
   const clearSelection = () => setSelectedIds({});
   const { isDark } = useDarkModeContext();
   const router = useRouter();
+
+  // Day Popover 상태
+  const [dayPopover, setDayPopover] = useState<{ date: Date; x: number; y: number; } | null>(null);
 
   const assignColor = useCallback((id: number) => {
     return colorPalette[id % colorPalette.length];
@@ -56,7 +63,6 @@ export default function ScheduleCalendar({ reloadTrigger }: Props) {
         console.error('일정 불러오기 실패:', e);
       }
     };
-
     fetchSchedules();
   }, [assignColor, reloadTrigger]);
 
@@ -93,13 +99,9 @@ export default function ScheduleCalendar({ reloadTrigger }: Props) {
         let newStart = start;
         let newEnd = end;
 
-        if (isSameDay(draggedStart, start)) {
-          newStart = dropDate;
-        } else if (isSameDay(draggedStart, end)) {
-          newEnd = dropDate;
-        } else {
-          return s;
-        }
+        if (isSameDay(draggedStart, start)) newStart = dropDate;
+        else if (isSameDay(draggedStart, end)) newEnd = dropDate;
+        else return s;
 
         if (newStart > newEnd) return s;
 
@@ -113,17 +115,30 @@ export default function ScheduleCalendar({ reloadTrigger }: Props) {
     );
   };
 
-  const matchedSchedules = schedules.filter(s => {
-    const d = new Date(value.getFullYear(), value.getMonth(), value.getDate());
-    const start = new Date(s.startTime);
-    const end = new Date(s.endTime);
-    return d >= new Date(start.getFullYear(), start.getMonth(), start.getDate()) &&
-      d <= new Date(end.getFullYear(), end.getMonth(), end.getDate());
-  });
+  const getSchedulesForDate = (date: Date) => {
+    const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const list = schedules.filter((s) => {
+      const start = new Date(s.startTime);
+      const end = new Date(s.endTime);
+      return (
+        d >= new Date(start.getFullYear(), start.getMonth(), start.getDate()) &&
+        d <= new Date(end.getFullYear(), end.getMonth(), end.getDate())
+      );
+    });
+    return list.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+  };
+
+  const openDayPopover = (date: Date, tileEl: HTMLElement) => {
+    const r = tileEl.getBoundingClientRect();
+    setDayPopover({ date, x: r.left, y: r.bottom + 4 });
+  };
+  const closeDayPopover = () => setDayPopover(null);
+
+  const matchedSchedules = getSchedulesForDate(value);
 
   return (
     <DndContext>
-      <div className={`w-full p-4 md:p-6 rounded shadow transition-colors ${isDark ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}>
+      <div className={`cal-compact w-full p-4 md:p-6 rounded shadow ${isDark ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}>
 
         {/* 헤더 */}
         <div className="flex items-center justify-between mb-3 md:mb-4">
@@ -133,7 +148,7 @@ export default function ScheduleCalendar({ reloadTrigger }: Props) {
         </div>
 
         {/* 캘린더 */}
-        <section className="min-w-0">
+        <section className="min-w-0 mx-auto w-full max-w-[600px] lg:max-w-[800px]">
           <Calendar
             className={`w-full text-sm md:text-base ${isDark ? 'dark-calendar' : ''}`}
             onChange={(date) => setValue(date as Date)}
@@ -144,30 +159,20 @@ export default function ScheduleCalendar({ reloadTrigger }: Props) {
             tileContent={({ date, view }) => {
               if (view !== 'month') return null;
 
-              const daySchedules = schedules.filter((s) => {
-                const start = new Date(s.startTime);
-                const end = new Date(s.endTime);
-                const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-                return (
-                  d >= new Date(start.getFullYear(), start.getMonth(), start.getDate()) &&
-                  d <= new Date(end.getFullYear(), end.getMonth(), end.getDate())
-                );
-              });
+              const daySchedules = getSchedulesForDate(date);
 
-              // 시작시간 오름차순
-              daySchedules.sort((a, b) =>
-                new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
-              );
-
-              // 터치 환경에서 드래그 비활성
               const isTouchDevice =
                 typeof window !== 'undefined' &&
                 ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
               return (
-                <div className="cal-cell relative w-full h-full" onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => handleDrop(e, date)}>
-                  <div className="cal-events flex flex-col gap-[2px] mt-5 items-start relative z-10">
+                <div
+                  className="cal-cell relative w-full h-full"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => handleDrop(e, date)}
+                  onClick={(e) => openDayPopover(date, e.currentTarget as HTMLElement)}
+                >
+                  <div className="cal-events flex flex-col gap-[2px] mt-3 items-start relative z-10">
                     {daySchedules.map((s, i) => {
                       const current = new Date(date);
                       const start = new Date(s.startTime);
@@ -176,6 +181,8 @@ export default function ScheduleCalendar({ reloadTrigger }: Props) {
                       const isEnd = isSameDay(current, end);
                       const canDrag = !isTouchDevice && (isStart || isEnd);
                       const draggedDate = isStart ? s.startTime : isEnd ? s.endTime : '';
+                      const isAllDay = start.getTime() === end.getTime();
+                      const label = isAllDay ? '종일' : fmtHM(start);
 
                       return (
                         <div
@@ -184,23 +191,19 @@ export default function ScheduleCalendar({ reloadTrigger }: Props) {
                           onDragStart={(e) =>
                             canDrag && handleDragStart(e, s.id, s.color, draggedDate)
                           }
-                          className="flex items-center gap-1 text-[10px] md:text-[11px] truncate cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); router.push(`/calendar/${s.id}`); }}
+                          className="flex items-center gap-1 text-[11px] md:text-[12px] leading-4 truncate cursor-pointer"
                           title={`${s.title} (${s.startTime.split('T')[0]} ~ ${s.endTime.split('T')[0]})`}
                         >
-                          <div className={`h-[6px] w-2 rounded-full ${s.color}`} />
-                          <span className="max-w-[95%] md:max-w-[90%] truncate">
+                          <div className={`h-[8px] w-2 rounded-full ${s.color}`} />
+                          <span className="text-[10px] md:text-[11px] font-medium tabular-nums mr-1">{label}</span>
+                          <span className="max-w-[85%] md:max-w-[82%] truncate">
                             {s.title || '(제목 없음)'}
                           </span>
                         </div>
                       );
                     })}
                   </div>
-
-                  <div
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => handleDrop(e, date)}
-                    className="absolute inset-0 z-0"
-                  />
                 </div>
               );
             }}
@@ -290,8 +293,63 @@ export default function ScheduleCalendar({ reloadTrigger }: Props) {
             <p className="mt-2 text-sm text-gray-400">이 날은 일정이 없습니다.</p>
           )}
         </section>
+
+        {/* Day Popover */}
+        {dayPopover && createPortal(
+          <>
+            {/* 클릭 닫힘 영역 */}
+            <div className="fixed inset-0 z-40" onClick={closeDayPopover} />
+            {/* 카드 */}
+            {(() => {
+              const popWidth = 360;
+              const vw = typeof window !== 'undefined' ? window.innerWidth : 1024;
+              const left = Math.max(8, Math.min(dayPopover.x, vw - popWidth - 8));
+              const list = getSchedulesForDate(dayPopover.date);
+              return (
+                <div
+                  className={`fixed z-50 shadow-xl border rounded-md ${isDark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-200'}`}
+                  style={{ left, top: dayPopover.y, width: popWidth, maxHeight: '60vh' }}
+                  role="dialog" aria-modal="true"
+                >
+                  <div className={`px-3 py-2 border-b ${isDark ? 'border-gray-700' : 'border-gray-200'} flex items-center justify-between`}>
+                    <div className="font-semibold text-sm">
+                      {dayPopover.date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })} · {list.length}건
+                    </div>
+                    <button className="text-xs px-2 py-1 rounded border opacity-80 hover:opacity-100" onClick={closeDayPopover}>
+                      닫기
+                    </button>
+                  </div>
+                  <div className="p-3 overflow-auto max-h-[calc(60vh-44px)]">
+                    <ul className="space-y-2">
+                      {list.map((s) => {
+                        const st = new Date(s.startTime);
+                        const en = new Date(s.endTime);
+                        const isAllDay = st.getTime() === en.getTime();
+                        const timeText = isAllDay ? '하루 종일' : `${fmtHM(st)} ~ ${fmtHM(en)}`;
+                        return (
+                          <li key={`${s.id}-${s.startTime}`}>
+                            <button
+                              className="w-full flex items-start gap-2 text-left hover:bg-black/5 dark:hover:bg-white/10 rounded px-2 py-1.5"
+                              onClick={() => { closeDayPopover(); router.push(`/calendar/${s.id}`); }}
+                            >
+                              <div className={`mt-1 h-2 w-2 rounded-full ${s.color}`} />
+                              <div className="flex-1">
+                                <div className="text-xs text-gray-600 dark:text-gray-300 font-medium">{timeText}</div>
+                                <div className="text-sm leading-tight">{s.title || '(제목 없음)'}</div>
+                              </div>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                </div>
+              );
+            })()}
+          </>,
+          document.body
+        )}
       </div>
     </DndContext>
   );
-
 }
