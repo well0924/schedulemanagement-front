@@ -53,9 +53,9 @@ export default function MyPageSection() {
   }, []);
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-8">
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
       <div className={`
-        p-6 rounded shadow transition-colors duration-300
+        p-6 rounded-xl shadow-lg transition-colors duration-300
         ${isDark ? "bg-gray-800 text-white" : "bg-white text-black"}
       `}>
         <h1 className="text-2xl font-bold mb-6">🗓️ 마이페이지</h1>
