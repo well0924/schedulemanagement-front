@@ -32,11 +32,11 @@ export default function Header() {
   }, []);
 
   return (
-    <header className={`h-16 shadow flex justify-between items-center px-6 transition-colors duration-300 ${isDark ? "bg-gray-800 text-white" : "bg-white text-black"}`}>
+    <header className={`h-16 shadow flex justify-between items-center px-4 sm:px-6 transition-colors duration-300 ${isDark ? "bg-gray-800 text-white" : "bg-white text-black"}`}>
       <Link href={"/"}>
         <h1 className="text-xl font-bold">Schedule.AI</h1>
       </Link>
-      <div className="flex gap-2">
+      <div className="flex items-center gap-1 sm:gap-2">
         {/*알림*/}
         {isLoggedIn && <NotificationBell />}
 
@@ -44,33 +44,46 @@ export default function Header() {
           <>
             {/* 로그인한 경우 */}
             <Link href="/mypage">
-              <button className={`px-3 py-1 text-sm rounded transition-colors duration-200
-                ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-300 text-black hover:bg-gray-400"}`}>
-                마이페이지
+              <button className={`
+                px-2 py-1 text-sm rounded transition-colors duration-200
+                ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-300 text-black hover:bg-gray-400"}
+              `}>
+                <span className="hidden sm:inline">마이페이지</span>
+                <span className="sm:hidden">마이</span>
               </button>
             </Link>
 
             <button
-              onClick={logout} // 로그아웃 버튼 클릭 시 logout 함수 호출
-              className={`px-3 py-1 text-sm rounded transition-colors duration-200
-                ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-300 text-black hover:bg-gray-400"}`}>
-              로그아웃
+              onClick={logout}
+              className={`
+                px-2 py-1 text-sm rounded transition-colors duration-200
+                ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-300 text-black hover:bg-gray-400"}
+              `}
+            >
+              <span className="hidden sm:inline">로그아웃</span>
+              <span className="sm:hidden">로그아웃</span>
             </button>
           </>
         ) : (
           <>
             {/* 로그인 안한 경우 */}
             <Link href="/member/join">
-              <button className={`px-3 py-1 text-sm rounded transition-colors duration-200
-                ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-300 text-black hover:bg-gray-400"}`}>
-                회원가입
+              <button className={`
+                px-2 py-1 text-sm rounded transition-colors duration-200
+                ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-300 text-black hover:bg-gray-400"}
+              `}>
+                <span className="hidden sm:inline">회원가입</span>
+                <span className="sm:hidden">가입</span>
               </button>
             </Link>
 
             <Link href="/member">
-              <button className={`px-3 py-1 text-sm rounded transition-colors duration-200
-                ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-300 text-black hover:bg-gray-400"}`}>
-                로그인
+              <button className={`
+                px-2 py-1 text-sm rounded transition-colors duration-200
+                ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-300 text-black hover:bg-gray-400"}
+              `}>
+                <span className="hidden sm:inline">로그인</span>
+                <span className="sm:hidden">로그인</span>
               </button>
             </Link>
           </>
