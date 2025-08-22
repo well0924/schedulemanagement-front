@@ -33,6 +33,7 @@ export default function AddScheduleModal({ isOpen, onClose, onScheduleAdd }: Pro
     const [parentCategoryId, setParentCategoryId] = useState<number | null>(null);
     const [files, setFiles] = useState<FileList | null>(null);
     const [uploading, setUploading] = useState(false);
+    const [isDark, setIsDark] = useState(false);
 
     //로그인한 회원의 번호 가져오기.
     useEffect(() => {
@@ -47,6 +48,23 @@ export default function AddScheduleModal({ isOpen, onClose, onScheduleAdd }: Pro
         };
         getUserId();
     }, [accessToken]);
+
+    // 다크모드 클래스 변경 감지
+    useEffect(() => {
+        const checkDark = () => {
+            const hasDark = document.documentElement.classList.contains("dark");
+            setIsDark(hasDark);
+        };
+        checkDark();
+        const observer = new MutationObserver(() => {
+            checkDark();
+        });
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ["class"],
+        });
+        return () => observer.disconnect();
+    }, []);
 
     //카테고리 목록 가져오기.
     useEffect(() => {
@@ -86,33 +104,33 @@ export default function AddScheduleModal({ isOpen, onClose, onScheduleAdd }: Pro
 
     const handleFileUpload = async (): Promise<number[]> => {
         if (!files || files.length === 0) return [];
-      
+
         const fileNames = Array.from(files).map(file => file.name);
         setUploading(true);
-      
+
         try {
-          // 1. presigned upload URL 목록 요청
-          const presignedUrls = await getPresignedUploadUrls(fileNames);
-      
-          // 2. 각 presigned URL로 실제 S3 업로드
-          await Promise.all(
-            presignedUrls.map((url, i) =>
-              fetch(url, {
-                method: 'PUT',
-                body: files[i],
-              })
-            )
-          );
-      
-          // 3. 업로드 완료 후 DB에 등록 요청
-          const attachResponses = await completeFileUpload(fileNames);
-          return attachResponses.map(res => res.id);
-      
+            // 1. presigned upload URL 목록 요청
+            const presignedUrls = await getPresignedUploadUrls(fileNames);
+
+            // 2. 각 presigned URL로 실제 S3 업로드
+            await Promise.all(
+                presignedUrls.map((url, i) =>
+                    fetch(url, {
+                        method: 'PUT',
+                        body: files[i],
+                    })
+                )
+            );
+
+            // 3. 업로드 완료 후 DB에 등록 요청
+            const attachResponses = await completeFileUpload(fileNames);
+            return attachResponses.map(res => res.id);
+
         } catch (err) {
-          console.error("파일 업로드 실패", err);
-          return [];
+            console.error("파일 업로드 실패", err);
+            return [];
         } finally {
-          setUploading(false);
+            setUploading(false);
         }
     };
 
@@ -179,16 +197,16 @@ export default function AddScheduleModal({ isOpen, onClose, onScheduleAdd }: Pro
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-            <div className="bg-white w-full max-w-md p-6 rounded shadow">
+        <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40`}>
+            <div className={`w-full max-w-sm sm:max-w-md p-6 rounded shadow-lg transition-colors duration-300 ${isDark ? "bg-gray-800 text-white" : "bg-white text-black"}`}>
                 <h2 className="text-lg font-bold mb-4">📝 일정 추가</h2>
-
                 <div className="space-y-3">
                     <input
                         type="text"
                         name='contents'
                         placeholder="일정 내용"
-                        className="w-full border px-3 py-2 rounded text-sm"
+                        className={`w-full border px-3 py-2 rounded text-sm transition-colors duration-300
+                                    ${isDark ? "bg-gray-700 text-white border-gray-600 focus:outline-none focus:border-blue-500" : "bg-gray-100 text-black border-gray-300 focus:outline-none focus:border-blue-500"}`}
                         value={contents}
                         onChange={(e) => setContents(e.target.value)}
                     />
@@ -197,23 +215,25 @@ export default function AddScheduleModal({ isOpen, onClose, onScheduleAdd }: Pro
                         name='isAllDay'
                         checked={isAllDay}
                         onChange={() => setIsAllDay(!isAllDay)}
-                        className="w-4 h-4"
+                        className={`w-4 h-4 rounded ${isDark ? "text-blue-500 bg-gray-700 border-gray-600" : "text-blue-500 bg-gray-100 border-gray-300"}`}
                     />
                     <label className="text-sm">하루 종일 일정</label>
-                    
+
                     <br></br>
                     {/* 시작 날짜/시간 */}
                     <label className="text-sm font-semibold">시작</label>
                     <div className="flex gap-2">
                         <input
                             type="date"
-                            className="w-full border px-3 py-2 rounded text-sm"
+                            className={`w-full border px-3 py-2 rounded text-sm transition-colors duration-300
+                                    ${isDark ? "bg-gray-700 text-white border-gray-600 focus:outline-none focus:border-blue-500" : "bg-gray-100 text-black border-gray-300 focus:outline-none focus:border-blue-500"}`}
                             value={startDate}
                             onChange={(e) => setStartDate(e.target.value)}
                         />
                         <input
                             type="time"
-                            className="w-full border px-3 py-2 rounded text-sm"
+                            className={`w-full border px-3 py-2 rounded text-sm transition-colors duration-300
+                                    ${isDark ? "bg-gray-700 text-white border-gray-600 focus:outline-none focus:border-blue-500" : "bg-gray-100 text-black border-gray-300 focus:outline-none focus:border-blue-500"}`}
                             value={startTime}
                             onChange={(e) => setStartTime(e.target.value)}
                             disabled={isAllDay}
@@ -225,13 +245,15 @@ export default function AddScheduleModal({ isOpen, onClose, onScheduleAdd }: Pro
                     <div className="flex gap-2">
                         <input
                             type="date"
-                            className="w-full border px-3 py-2 rounded text-sm"
+                            className={`w-full border px-3 py-2 rounded text-sm transition-colors duration-300
+                                    ${isDark ? "bg-gray-700 text-white border-gray-600 focus:outline-none focus:border-blue-500" : "bg-gray-100 text-black border-gray-300 focus:outline-none focus:border-blue-500"}`}
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
                         />
                         <input
                             type="time"
-                            className="w-full border px-3 py-2 rounded text-sm"
+                            className={`w-full border px-3 py-2 rounded text-sm transition-colors duration-300
+                                    ${isDark ? "bg-gray-700 text-white border-gray-600 focus:outline-none focus:border-blue-500" : "bg-gray-100 text-black border-gray-300 focus:outline-none focus:border-blue-500"}`}
                             value={endTime}
                             onChange={(e) => setEndTime(e.target.value)}
                             disabled={isAllDay}
@@ -239,7 +261,8 @@ export default function AddScheduleModal({ isOpen, onClose, onScheduleAdd }: Pro
                     </div>
 
                     <select
-                        className="w-full border px-3 py-2 rounded text-sm"
+                        className={`w-full border px-3 py-2 rounded text-sm transition-colors duration-300
+                                    ${isDark ? "bg-gray-700 text-white border-gray-600 focus:outline-none focus:border-blue-500" : "bg-gray-100 text-black border-gray-300 focus:outline-none focus:border-blue-500"}`}
                         value={parentCategoryId ?? ''}
                         onChange={(e) => {
                             const val = e.target.value;
@@ -255,7 +278,8 @@ export default function AddScheduleModal({ isOpen, onClose, onScheduleAdd }: Pro
                     <div className="space-y-2">
                         <label className="text-sm font-semibold">카테고리 선택</label>
                         <select
-                            className="w-full border px-3 py-2 rounded text-sm"
+                            className={`w-full border px-3 py-2 rounded text-sm transition-colors duration-300
+                                    ${isDark ? "bg-gray-700 text-white border-gray-600 focus:outline-none focus:border-blue-500" : "bg-gray-100 text-black border-gray-300 focus:outline-none focus:border-blue-500"}`}
                             value={categoryId ?? ''}
                             onChange={(e) => setCategoryId(Number(e.target.value))}
                         >
@@ -274,11 +298,12 @@ export default function AddScheduleModal({ isOpen, onClose, onScheduleAdd }: Pro
                                 value={newCategoryName}
                                 onChange={(e) => setNewCategoryName(e.target.value)}
                                 placeholder="새 카테고리명 입력"
-                                className="flex-1 border px-3 py-2 rounded text-sm"
+                                className={`w-full border px-3 py-2 rounded text-sm transition-colors duration-300
+                                    ${isDark ? "bg-gray-700 text-white border-gray-600 focus:outline-none focus:border-blue-500" : "bg-gray-100 text-black border-gray-300 focus:outline-none focus:border-blue-500"} flex-1`}
                             />
                             <button
                                 onClick={handleAddCategory}
-                                className="bg-blue-500 text-white text-sm px-3 py-2 rounded"
+                                className={`px-4 py-2 text-sm rounded transition-colors duration-300 bg-blue-500 text-white hover:bg-blue-600`}
                             >
                                 추가
                             </button>
@@ -288,7 +313,8 @@ export default function AddScheduleModal({ isOpen, onClose, onScheduleAdd }: Pro
                     <div className="space-y-2">
                         <label className="text-sm font-semibold">반복 설정</label>
                         <select
-                            className="w-full border px-3 py-2 rounded text-sm"
+                            className={`w-full border px-3 py-2 rounded text-sm transition-colors duration-300
+                                    ${isDark ? "bg-gray-700 text-white border-gray-600 focus:outline-none focus:border-blue-500" : "bg-gray-100 text-black border-gray-300 focus:outline-none focus:border-blue-500"}`}
                             value={repeatType}
                             onChange={(e) => setRepeatType(e.target.value as ScheduleRequest['repeatType'])}
                         >
@@ -301,7 +327,8 @@ export default function AddScheduleModal({ isOpen, onClose, onScheduleAdd }: Pro
                         <input
                             type="number"
                             min={0}
-                            className="w-full border px-3 py-2 rounded text-sm"
+                            className={`w-full border px-3 py-2 rounded text-sm transition-colors duration-300
+                                    ${isDark ? "bg-gray-700 text-white border-gray-600 focus:outline-none focus:border-blue-500" : "bg-gray-100 text-black border-gray-300 focus:outline-none focus:border-blue-500"}`}
                             value={repeatCount}
                             onChange={(e) => setRepeatCount(Number(e.target.value))}
                             disabled={repeatType === 'NONE'}
@@ -312,7 +339,8 @@ export default function AddScheduleModal({ isOpen, onClose, onScheduleAdd }: Pro
                         <input
                             type="number"
                             min={0}
-                            className="w-full border px-3 py-2 rounded text-sm"
+                            className={`w-full border px-3 py-2 rounded text-sm transition-colors duration-300
+                                    ${isDark ? "bg-gray-700 text-white border-gray-600 focus:outline-none focus:border-blue-500" : "bg-gray-100 text-black border-gray-300 focus:outline-none focus:border-blue-500"}`}
                             value={repeatInterval}
                             onChange={(e) => setRepeatInterval(Number(e.target.value))}
                             disabled={repeatType === 'NONE'}
@@ -325,7 +353,8 @@ export default function AddScheduleModal({ isOpen, onClose, onScheduleAdd }: Pro
                         <input
                             type="file"
                             multiple
-                            className="w-full border px-3 py-2 rounded text-sm"
+                            className={`w-full border px-3 py-2 rounded text-sm transition-colors duration-300
+                                    ${isDark ? "bg-gray-700 text-white border-gray-600 focus:outline-none focus:border-blue-500" : "bg-gray-100 text-black border-gray-300 focus:outline-none focus:border-blue-500"}`}
                             onChange={(e) => setFiles(e.target.files)}
                         />
                         {files && (
@@ -342,7 +371,7 @@ export default function AddScheduleModal({ isOpen, onClose, onScheduleAdd }: Pro
                 <div className="mt-6 flex justify-end gap-2">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 text-sm bg-gray-200 rounded"
+                        className={`px-4 py-2 text-sm rounded transition-colors duration-300 bg-gray-200 text-black hover:bg-gray-300 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600`}
                     >
                         취소
                     </button>
@@ -351,7 +380,7 @@ export default function AddScheduleModal({ isOpen, onClose, onScheduleAdd }: Pro
                         disabled={
                             !contents.trim() || !startDate || !endDate || (!isAllDay && (!startTime || !endTime)) || !categoryId || !userId
                         }
-                        className="px-4 py-2 text-sm bg-blue-500 text-white rounded disabled:bg-gray-400"
+                        className={`px-4 py-2 text-sm rounded transition-colors duration-300 bg-blue-500 text-white disabled:bg-gray-400 dark:disabled:bg-gray-600`}
                     >
                         {uploading ? '업로드 중...' : '등록'}
                     </button>
