@@ -58,7 +58,10 @@ export default function NotificationBell() {
         if (!userId || !accessToken) return;
 
         const client = connectNotificationWS(userId, accessToken, (newNotification) => {
-            setNotifications((prev) => [newNotification, ...prev]);
+            setNotifications((prev) => [
+                { ...newNotification, id: newNotification.id ?? Date.now() },  // 고유값 보장
+                ...prev,
+            ]);
             setUnreadCount((prev) => prev + 1);
         });
 
@@ -75,10 +78,10 @@ export default function NotificationBell() {
                 prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
             );
             setUnreadCount(prev => Math.max(0, prev - 1));
-    
+
             // 2. 서버 상태 반영
             await isMarkedRead(id); // 여기를 실제 API로 요청
-    
+
         } catch (e) {
             console.error('알림 읽음 처리 실패:', e);
         }
@@ -130,9 +133,9 @@ export default function NotificationBell() {
                         ) : (
                             notifications
                                 .filter((n) => !n.isRead)
-                                .map((n) => (
+                                .map((n, idx) => (
                                     <li
-                                        key={n.id}
+                                        key={n.id ?? `${n.scheduleId}-${idx}`}
                                         className="px-4 py-2 flex gap-2 items-start cursor-pointer hover:bg-gray-100"
                                         onClick={() => handleRead(n.id)}
                                     >
