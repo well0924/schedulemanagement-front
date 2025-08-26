@@ -16,8 +16,8 @@ export async function ScheduleById(id: number) {
 }
 
 // 오늘 일정 조회
-export async function TodayScheduleList(userId: number) {
-  return fetcher<ScheduleResponse[]>(`/api/schedule/today/${userId}`, {
+export async function TodayScheduleList() {
+  return fetcher<ScheduleResponse[]>(`/api/schedule/today`, {
     method: "GET",
   });
 }
