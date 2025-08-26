@@ -11,6 +11,7 @@ export default function MyPageSection() {
   const [isDark, setIsDark] = useState(false);
   const [total, setTotal] = useState(0);
   const [completed, setCompleted] = useState(0);
+  const [userId, setUserId] = useState(0); 
 
   useEffect(() => {
     const checkDark = () => {
@@ -37,8 +38,9 @@ export default function MyPageSection() {
         const token = localStorage.getItem("accessToken");
         if (!token) return;
 
-        const userId = await fetchUserIdFromServer(token);
-        const schedules = await TodayScheduleList(userId);
+        const fetchedUserId = await fetchUserIdFromServer(token);
+        setUserId(fetchedUserId);
+        const schedules = await TodayScheduleList();
 
         setTotal(schedules.length);
         setCompleted(schedules.filter(s => s.progressStatus?.value === "COMPLETE").length);
@@ -65,7 +67,7 @@ export default function MyPageSection() {
         </section>
 
         <section className="mb-6">
-          <Settings notifications={true} repeatType="DAILY" />
+          <Settings notifications={true} repeatType="DAILY" userId={userId}/>
         </section>
 
         <ActionButtons />

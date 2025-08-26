@@ -1,4 +1,4 @@
-import { Notification } from "@/app/utile/interfaces/notification/NotificationModel";
+import { Notification, NotificationSetting } from "@/app/utile/interfaces/notification/NotificationModel";
 import { fetcher } from "./fetcher";
 
 
@@ -21,5 +21,23 @@ export async function isMarkedRead(id: number): Promise<void>{
         headers: {
             'Content-Type': 'application/json',
         },
+    });
+}
+
+// 알림 수신 여부
+export async function toggleNotificationSetting(userId: number, enabled: boolean): Promise<NotificationSetting> {
+    return fetcher<NotificationSetting>(`/api/notification-setting/me/all`, {
+        method: 'PUT',
+        body: JSON.stringify({ userId, enabled }),
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
+}
+
+// 알림 설정 기본값으로 초기화
+export async function resetNotificationSetting(userId: number): Promise<void> {
+    return fetcher<void>(`/api/notification-setting/me/reset/${userId}`, {
+        method: 'POST',
     });
 }
