@@ -8,12 +8,18 @@ import ScheduleCalendar from "./calendar/MainCalendar";
 import { fetchUserIdFromServer } from "../utile/api/LoginApi";
 import { bulkDeleteSchedules, createSchedule, TodayScheduleList } from "../utile/api/ScheduleApi";
 import { connectNotificationWS } from "../utile/websocket/websokcet";
+import TodaySummary from "./calendar/TodaySummary";
 
 export default function ClientHome() {
     const [schedules, setSchedules] = useState<ScheduleResponse[]>([]);
     const [, setUserId] = useState<number | null>(null);
     const [calendarReloadFlag, setCalendarReloadFlag] = useState(false);
 
+    const total = schedules.length;
+    const completed = schedules.filter(s => s.progressStatus?.value === 'COMPLETE').length;
+
+
+    // websocket 연결
     useEffect(() => {
         const timer = setTimeout(() => {
             const token = localStorage.getItem("accessToken");
@@ -41,6 +47,7 @@ export default function ClientHome() {
         return () => clearTimeout(timer);
     }, []);
 
+    //Today 일정 + 유저 정보 불러오기 
     useEffect(() => {
         const loadUserIdAndSchedules = async () => {
             const token = localStorage.getItem("accessToken");
@@ -51,15 +58,14 @@ export default function ClientHome() {
                 try {
                     id = await fetchUserIdFromServer(token);
                     setUserId(id);
-                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                } catch (e: unknown) {
+                } catch {
                     console.warn("로그인 상태 아님 or 사용자 정보 조회 실패");
                 }
             }
 
             try {
                 if (id !== null) {
-                    const todaySchedules = await TodayScheduleList(id);
+                    const todaySchedules = await TodayScheduleList();
                     console.log(todaySchedules);
                     setSchedules(todaySchedules);
                 } else {
@@ -111,24 +117,33 @@ export default function ClientHome() {
     };
 
     return (
-        <div>
-            <h1 className="text-2xl font-bold mb-4">📅 내 일정</h1>
+        <div className="p-6 max-w-[1400px] mx-auto">
+            {/* 상단 페이지 타이틀 */}
+            <h1 className="text-2xl font-bold mb-4 mt-4">내 일정</h1>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div>
+            {/* 메인 레이아웃 */}
+            <div className="flex gap-6 items-start">
+
+                {/* 왼쪽: TodaySchedule + Today Summary */}
+                <aside className="w-[420px] flex-shrink-0 mb-8">
+                    <TodaySummary total={total} completed={completed} />
+
                     <TodaySchedule
                         schedules={schedules}
                         onDeleteSchedules={handleDelete}
-                        onEditSchedule={handleEdit} />
-                </div>
-                <div>
-                    <ScheduleCalendar reloadTrigger={calendarReloadFlag} />
-                </div>
+                    />
+                </aside>
+
+                {/* 오른쪽: 캘린더 */}
+                <main className="flex-1">
+                    <div className="rounded-xl shadow-lg p-8 bg-gray-800 border border-gray-700">
+                        <ScheduleCalendar reloadTrigger={calendarReloadFlag} />
+                    </div>
+                </main>
             </div>
 
-            <AddScheduleButton
-                onScheduleAdd={handleAddSchedule}
-            />
+            {/* 플로팅 추가 버튼 */}
+            <AddScheduleButton onScheduleAdd={handleAddSchedule} />
         </div>
     );
 }
