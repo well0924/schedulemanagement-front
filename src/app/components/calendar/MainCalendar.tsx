@@ -165,6 +165,11 @@ export default function ScheduleCalendar({ reloadTrigger }: Props) {
                 typeof window !== 'undefined' &&
                 ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
+              const MAX_VISIBLE = isTouchDevice ? 2 : 3;
+
+              const visible = daySchedules.slice(0, MAX_VISIBLE);
+              const hiddenCount = daySchedules.length - visible.length;
+
               return (
                 <div
                   className="cal-cell relative w-full h-full"
@@ -173,36 +178,39 @@ export default function ScheduleCalendar({ reloadTrigger }: Props) {
                   onClick={(e) => openDayPopover(date, e.currentTarget as HTMLElement)}
                 >
                   <div className="cal-events flex flex-col gap-[2px] mt-3 items-start relative z-10">
-                    {daySchedules.map((s, i) => {
-                      const current = new Date(date);
+                    {visible.map((s, i) => {
                       const start = new Date(s.startTime);
                       const end = new Date(s.endTime);
-                      const isStart = isSameDay(current, start);
-                      const isEnd = isSameDay(current, end);
-                      const canDrag = !isTouchDevice && (isStart || isEnd);
-                      const draggedDate = isStart ? s.startTime : isEnd ? s.endTime : '';
                       const isAllDay = start.getTime() === end.getTime();
                       const label = isAllDay ? '종일' : fmtHM(start);
 
                       return (
                         <div
-                          key={`${s.id}-${draggedDate}-${i}`}
-                          draggable={canDrag}
-                          onDragStart={(e) =>
-                            canDrag && handleDragStart(e, s.id, s.color, draggedDate)
-                          }
-                          onClick={(e) => { e.stopPropagation(); router.push(`/calendar/${s.id}`); }}
-                          className="flex items-center gap-1 text-[11px] md:text-[12px] leading-4 truncate cursor-pointer"
-                          title={`${s.title} (${s.startTime.split('T')[0]} ~ ${s.endTime.split('T')[0]})`}
+                          key={`${s.id}-${i}`}
+                          className="flex items-center gap-1 text-[11px] truncate cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/calendar/${s.id}`);
+                          }}
                         >
                           <div className={`h-[8px] w-2 rounded-full ${s.color}`} />
-                          <span className="text-[10px] md:text-[11px] font-medium tabular-nums mr-1">{label}</span>
-                          <span className="max-w-[85%] md:max-w-[82%] truncate">
-                            {s.title || '(제목 없음)'}
-                          </span>
+                          <span className="text-[10px] mr-1">{label}</span>
+                          <span className="truncate">{s.title || '(제목 없음)'}</span>
                         </div>
                       );
                     })}
+
+                    {hiddenCount > 0 && (
+                      <div
+                        className="text-[11px] text-gray-500 cursor-pointer hover:underline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDayPopover(date, e.currentTarget.closest('.cal-cell') as HTMLElement);
+                        }}
+                      >
+                        +{hiddenCount} 더보기
+                      </div>
+                    )}
                   </div>
                 </div>
               );

@@ -50,3 +50,33 @@ export interface ScheduleResponse {
     updatedTime: string;
     attachFiles: AttachResponse[];//첨부파일
 }
+
+export interface ScheduleCreatePayload {
+  contents: string;
+  startTime: string;
+  endTime: string;
+  scheduleMonth: number;
+  scheduleDays: number;
+  isAllDay: boolean;
+
+  categoryId?: number;
+
+  repeatType?: 'NONE' | 'DAILY' | 'MONTHLY' | 'YEARS';
+  repeatCount?: number;
+  repeatInterval?: number;
+
+  scheduleType?: 'ALL_DAY' | 'SINGLE_DAY' | 'MULTI_DAY';
+  attachIds?: number[];
+}
+
+// 일정 추천 응답
+export interface RecommendedScheduleDraft {
+  id: -1;
+  contents: string;
+  startTime: string;
+  endTime: string;
+  scheduleDays: number;
+  scheduleMonth: number;
+  memberId: number;
+  isAllDay: boolean;
+}

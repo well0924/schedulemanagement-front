@@ -7,14 +7,15 @@ import AddScheduleButton from "./calendar/AddScheduleButton";
 import ScheduleCalendar from "./calendar/MainCalendar";
 import { fetchUserIdFromServer } from "../utile/api/LoginApi";
 import { bulkDeleteSchedules, createSchedule, TodayScheduleList } from "../utile/api/ScheduleApi";
-import { connectNotificationWS } from "../utile/websocket/websokcet";
+import { connectNotificationWS } from "@/app/utile/websocket/websokcet";
 import TodaySummary from "./calendar/TodaySummary";
+import ChatBotFloating from "./chatbot/ChatBotFloating";
 
 export default function ClientHome() {
     const [schedules, setSchedules] = useState<ScheduleResponse[]>([]);
-    const [, setUserId] = useState<number | null>(null);
+    const [userId, setUserId] = useState<number | null>(null);
     const [calendarReloadFlag, setCalendarReloadFlag] = useState(false);
-
+    
     const total = schedules.length;
     const completed = schedules.filter(s => s.progressStatus?.value === 'COMPLETE').length;
 
@@ -86,7 +87,6 @@ export default function ClientHome() {
     };
 
     const handleEdit = (schedule: ScheduleResponse) => {
-        // TODO: 일정 수정 모달 띄우기 등 추가 예정
         console.log("수정할 일정:", schedule);
     };
 
@@ -124,7 +124,7 @@ export default function ClientHome() {
             {/* 메인 레이아웃 */}
             <div className="flex gap-6 items-start">
 
-                {/* 왼쪽: TodaySchedule + Today Summary */}
+                {/* 왼쪽: TodaySchedule + Today Summary + ScheduleRecommendation*/}
                 <aside className="w-[420px] flex-shrink-0 mb-8">
                     <TodaySummary total={total} completed={completed} />
 
@@ -132,6 +132,12 @@ export default function ClientHome() {
                         schedules={schedules}
                         onDeleteSchedules={handleDelete}
                     />
+                    {/* 챗봇을 여기서 제거 (플로팅으로 이동) */}
+                    {!userId && (
+                        <div className="p-8 bg-gray-800 rounded-xl border border-gray-700 text-center">
+                            <p className="text-gray-400 text-sm">로그인 후 AI 비서의 도움을 받아보세요.</p>
+                        </div>
+                    )}
                 </aside>
 
                 {/* 오른쪽: 캘린더 */}
@@ -144,6 +150,9 @@ export default function ClientHome() {
 
             {/* 플로팅 추가 버튼 */}
             <AddScheduleButton onScheduleAdd={handleAddSchedule} />
+
+            {/* 로그인 했을 때만 챗봇 플로팅 버튼 표시 */}
+            {userId && <ChatBotFloating />}
         </div>
     );
 }

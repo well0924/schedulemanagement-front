@@ -1,5 +1,6 @@
-import { ScheduleRequest, ScheduleResponse } from "@/app/utile/interfaces/calendar/calendarModel";
+import { RecommendedScheduleDraft, ScheduleRequest, ScheduleResponse } from "@/app/utile/interfaces/calendar/calendarModel";
 import { fetcher } from "./fetcher";
+import { ChatRequest } from "../interfaces/chat/chatModel";
 
 // 전체 일정 조회
 export async function ScheduleAllList() {
@@ -59,7 +60,7 @@ export async function updateSchedule(id: number, data: ScheduleRequest) {
 
 //일정 상태 변경
 export async function updateScheduleStatus(scheduleId: number, status: "IN_COMPLETE" | "PROGRESS" | "COMPLETE") {
-  return fetch(`https://api.schedulemanagement.site/api/schedule/status/${scheduleId}`, {
+  return fetch(`https://api.schedulemanagement.shop/api/schedule/status/${scheduleId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ value: status }),
@@ -82,3 +83,21 @@ export async function bulkDeleteSchedules(ids: number[]) {
     autoJson: false,
   });
 }
+
+//일정 추천목록
+export async function getScheduleRecommendation(
+  page = 0,
+  size = 3
+): Promise<RecommendedScheduleDraft[]> {
+  return fetcher<RecommendedScheduleDraft[]>(
+    `/api/chat/recommend?page=${page}&size=${size}`
+  );
+}
+
+//일정 챗봇
+export const sendChatMessage = async (data: ChatRequest) => {
+  return fetcher<void>(`/api/v1/chat/send`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+};

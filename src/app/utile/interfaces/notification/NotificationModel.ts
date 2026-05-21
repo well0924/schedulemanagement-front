@@ -33,3 +33,19 @@ export interface NotificationSetting {
 }
 
 //알림 웹푸시 dto
+export interface NotificationWebPush {
+     memberId:number,
+     endpoint:string,
+     p256dh:string,
+     auth:string,
+     userAgent:string
+}
+
+// 웹 푸시 응답 dto
+export interface NotificationWebPushResponse {
+  id: number;
+  memberId: number;
+  endpoint: string;
+  userAgent: string;
+  active: boolean;
+}

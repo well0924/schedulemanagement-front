@@ -1,4 +1,4 @@
-import { Notification, NotificationSetting } from "@/app/utile/interfaces/notification/NotificationModel";
+import { Notification, NotificationSetting, NotificationWebPushResponse } from "@/app/utile/interfaces/notification/NotificationModel";
 import { fetcher } from "./fetcher";
 
 
@@ -40,4 +40,32 @@ export async function resetNotificationSetting(userId: number): Promise<void> {
     return fetcher<void>(`/api/notification-setting/me/reset/${userId}`, {
         method: 'POST',
     });
+}
+
+// 웹 푸시 구독 여부
+export async function notificationWebPushSubscribe(): Promise<NotificationWebPushResponse[]> {
+    return fetcher<NotificationWebPushResponse[]>(`/api/push/subscribe`,{method:'POST'});
+}
+
+// 웹 푸시 알림 활성화
+export async function getActiveWebPushes(memberId: number): Promise<NotificationWebPushResponse[]> {
+  return fetcher<NotificationWebPushResponse[]>(
+    `/api/push/active?memberId=${memberId}`
+  );
+}
+
+// 웹 푸시 구독 해제 
+export async function unsubscribeWebPush(
+  memberId: number,
+  endpoint: string
+): Promise<void> {
+  return fetcher<void>(
+    `/api/push/unsubscribe?memberId=${memberId}&endpoint=${encodeURIComponent(endpoint)}`,
+    { method: 'POST' }
+  );
+}
+
+// 웹 푸시 구독 전부 해제
+export async function unsubscribeAllWebPush(memberId: number): Promise<void> {
+  return fetcher<void>(`/api/push/unsubscribeAll?memberId=${memberId}`,{ method: 'POST' });
 }
