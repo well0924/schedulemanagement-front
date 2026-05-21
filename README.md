@@ -18,7 +18,6 @@
 | **스타일링** | Tailwind CSS |
 | **기능 연동** | REST API, Presigned URL, WebSocket |
 | **상태관리** | React Context API |
-| **기타** | SSR, 다크모드, 반응형 UI 지원 예정 |
 
 ---
 
@@ -44,16 +43,13 @@
 ### 👤 마이페이지 (환경 설정 + 통계)
 ![Image](https://github.com/user-attachments/assets/b89ec9cb-014d-45fe-afe1-9d46e11f00fa)
 
-> 💡 현재 UI는 기능 중심의 MVP로 제작되었으며,  
-> 사용성 피드백을 기반으로 Tailwind CSS 리디자인 및 모바일 대응을 진행 중입니다.
-
 ---
 
 ## 🛠️ 설치 및 실행 방법
 
 ```bash
-git clone https://github.com/well0924/schedulemanagementProject.git
-cd frontend
+git clone https://github.com/well0924/schedulemanagement-front.git
+cd schedulemanagement-front/my-app
 npm install
 npm run dev
 ```
@@ -61,10 +57,6 @@ npm run dev
 
 ## 🚧 개선 예정 사항 (TODO)
 
-- [x] Tailwind CSS 기반 UI 컴포넌트 리디자인
-- [x] 모바일 반응형 레이아웃 대응
-- [ ] 캘린더 UX 개선 (달력 이동, 일정 상세 보기)
-- [ ] 에러 / 로딩 상태 처리 개선
 - [ ] 사용자 행동 로그 기반 UX 최적화 실험
 
 ---
@@ -78,3 +70,7 @@ npm run dev
 백엔드는 Kafka, Redis, Presigned URL 등 실무 기술 적극 활용했고
 
 클라이언트-서버 간 보안, 실시간성, 파일 업로드 신뢰성까지 염두했습니다.
+
+## 🔗 관련 저장소
+
+- **백엔드:** [schedulemanagementProject](https://github.com/well0924/schedulemanagementProject)
