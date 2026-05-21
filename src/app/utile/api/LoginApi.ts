@@ -31,7 +31,7 @@ export async function fetchTokenReissue(refreshTokenDto: { refreshToken: string 
 }
 
 export async function fetchUserIdFromServer(accessToken: string): Promise<number> {
-    const response = await fetch("https:/api.schedulemanagement.site/api/auth/user-id", {
+    const response = await fetch("https:/api.schedulemanagement.shop/api/auth/user-id", {
         method: "GET",
         headers: {
             Authorization: accessToken, //
