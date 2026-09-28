@@ -1,4 +1,4 @@
-import { fetchTokenReissue } from "./LoginApi";
+import { reissueAndStoreTokens } from "./LoginApi";
 
 export interface FetcherOptions extends Omit<RequestInit, "headers"> {
   token?: string;
@@ -43,13 +43,7 @@ export async function fetcher<T>(
 
   if (response.status === 401) {
     try {
-      const refreshToken = localStorage.getItem("refreshToken");
-      if (!refreshToken) throw new Error("리프레시 토큰 없음");
-
-      const res = await fetchTokenReissue({ refreshToken });
-      const newAccessToken = res.accessToken;
-      localStorage.setItem("accessToken", newAccessToken);
-
+      const newAccessToken = await reissueAndStoreTokens();
       response = await makeRequest(newAccessToken);
     } catch (error) {
       console.error("토큰 재발급 및 재요청 실패", error);
