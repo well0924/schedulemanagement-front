@@ -13,8 +13,8 @@ export async function fetchLogin(data: LoginRequest): Promise<LoginResponse> {
 //로그아웃
 export async function fetchLogout(): Promise<void> {
     const token = localStorage.getItem("accessToken") || "";
-    console.log(token);
-    await fetch("http://localhost:8082/api/auth/log-out", {
+    // 서버 logout은 "Bearer " 없는 원본 토큰을 받는다 (AuthService.logout)
+    await fetch("https://api.schedulemanagement.shop/api/auth/log-out", {
         method: "POST",
         headers: {
             Authorization: token,
