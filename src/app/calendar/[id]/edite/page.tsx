@@ -53,18 +53,15 @@ export default function ScheduleEditPage() {
     setUploading(true);
     try {
       const presignedUrls = await getPresignedUploadUrls(fileNames);
-      const results = await Promise.all(
+      await Promise.all(
         presignedUrls.map((url, i) =>
           fetch(url, { method: 'PUT', body: files[i] })
         )
       );
-      // fetch는 4xx/5xx에도 예외를 던지지 않으므로 직접 확인
-      if (results.some(r => !r.ok)) throw new Error('S3 업로드 실패');
       const uploaded = await completeFileUpload(fileNames);
       return uploaded.map(f => f.id);
     } catch (err) {
       console.error('업로드 실패', err);
-      alert('파일 업로드에 실패했습니다. 새 첨부파일 없이 저장됩니다.');
       return [];
     } finally {
       setUploading(false);
