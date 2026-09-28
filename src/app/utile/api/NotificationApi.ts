@@ -1,4 +1,5 @@
 import { Notification, NotificationSetting, NotificationWebPushResponse } from "@/app/utile/interfaces/notification/NotificationModel";
+import { BrowserPushSubscription } from "@/app/utile/push/webPush";
 import { fetcher } from "./fetcher";
 
 
@@ -42,9 +43,14 @@ export async function resetNotificationSetting(userId: number): Promise<void> {
     });
 }
 
-// 웹 푸시 구독 여부
-export async function notificationWebPushSubscribe(): Promise<NotificationWebPushResponse[]> {
-    return fetcher<NotificationWebPushResponse[]>(`/api/push/subscribe`,{method:'POST'});
+// 웹 푸시 구독 등록 (브라우저 구독 정보를 서버에 저장, 회원은 서버가 로그인 정보로 채움)
+export async function notificationWebPushSubscribe(
+  subscription: BrowserPushSubscription
+): Promise<NotificationWebPushResponse> {
+    return fetcher<NotificationWebPushResponse>(`/api/push/subscribe`, {
+      method: 'POST',
+      body: JSON.stringify(subscription),
+    });
 }
 
 // 웹 푸시 알림 활성화
@@ -61,11 +67,11 @@ export async function unsubscribeWebPush(
 ): Promise<void> {
   return fetcher<void>(
     `/api/push/unsubscribe?memberId=${memberId}&endpoint=${encodeURIComponent(endpoint)}`,
-    { method: 'POST' }
+    { method: 'POST', autoJson: false } // 서버가 빈 body(200)를 돌려준다
   );
 }
 
 // 웹 푸시 구독 전부 해제
 export async function unsubscribeAllWebPush(memberId: number): Promise<void> {
-  return fetcher<void>(`/api/push/unsubscribeAll?memberId=${memberId}`,{ method: 'POST' });
+  return fetcher<void>(`/api/push/unsubscribeAll?memberId=${memberId}`,{ method: 'POST', autoJson: false });
 }
