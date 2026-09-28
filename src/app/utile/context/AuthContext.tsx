@@ -7,7 +7,7 @@ import {
   useState,
   ReactNode
 } from "react";
-import { fetchLogout, fetchTokenReissue, fetchUserIdFromServer } from "../api/LoginApi";
+import { fetchLogout, fetchUserIdFromServer, reissueAndStoreTokens } from "../api/LoginApi";
 
 interface AuthContextType {
   accessToken: string | null;
@@ -55,17 +55,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const checkAndReissueToken = async (): Promise<string | null> => {
-    const refreshToken = localStorage.getItem("refreshToken");
-    if (!refreshToken) {
-      logout();
-      return null;
-    }
-
     try {
-      const response = await fetchTokenReissue({ refreshToken });
-      localStorage.setItem("accessToken", response.accessToken);
-      setAccessToken(response.accessToken);
-      return response.accessToken;
+      const newAccessToken = await reissueAndStoreTokens();
+      setAccessToken(newAccessToken);
+      return newAccessToken;
     } catch (err) {
       console.error("토큰 재발급 실패:", err);
       logout(); // 재발급 실패 시 강제 로그아웃
