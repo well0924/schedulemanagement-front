@@ -113,7 +113,7 @@ export default function AddScheduleModal({ isOpen, onClose, onScheduleAdd }: Pro
             const presignedUrls = await getPresignedUploadUrls(fileNames);
 
             // 2. 각 presigned URL로 실제 S3 업로드
-            await Promise.all(
+            const results = await Promise.all(
                 presignedUrls.map((url, i) =>
                     fetch(url, {
                         method: 'PUT',
@@ -121,6 +121,8 @@ export default function AddScheduleModal({ isOpen, onClose, onScheduleAdd }: Pro
                     })
                 )
             );
+            // fetch는 4xx/5xx에도 예외를 던지지 않으므로 직접 확인
+            if (results.some(r => !r.ok)) throw new Error('S3 업로드 실패');
 
             // 3. 업로드 완료 후 DB에 등록 요청
             const attachResponses = await completeFileUpload(fileNames);
@@ -128,6 +130,7 @@ export default function AddScheduleModal({ isOpen, onClose, onScheduleAdd }: Pro
 
         } catch (err) {
             console.error("파일 업로드 실패", err);
+            alert('파일 업로드에 실패했습니다. 첨부파일 없이 일정이 저장됩니다.');
             return [];
         } finally {
             setUploading(false);
