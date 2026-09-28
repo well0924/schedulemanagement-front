@@ -59,10 +59,10 @@ export async function updateSchedule(id: number, data: ScheduleRequest) {
 }
 
 //일정 상태 변경
+// 서버가 소유자 검증을 하므로 fetcher로 호출해 Authorization 헤더(및 401 시 재발급)를 적용한다.
 export async function updateScheduleStatus(scheduleId: number, status: "IN_COMPLETE" | "PROGRESS" | "COMPLETE") {
-  return fetch(`https://api.schedulemanagement.shop/api/schedule/status/${scheduleId}`, {
+  return fetcher<{ id: number; progressStatus: string }>(`/api/schedule/status/${scheduleId}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ value: status }),
   });
 }
