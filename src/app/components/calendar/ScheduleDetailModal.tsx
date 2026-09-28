@@ -87,13 +87,18 @@ export default function ScheduleDetailModal({ schedule, onClose, onDelete, onEdi
                       {file.originFileName}
                     </button>
                     <div className="relative w-12 h-12">
-                      <Image
-                        src={file.thumbnailFilePath}
-                        alt="thumbnail"
-                        fill
-                        sizes="48px"
-                        className="object-cover border rounded"
-                      />
+                      {/* 이미지가 아닌 파일이거나 썸네일 생성 전(비동기)이면 thumbnailFilePath가 없다 */}
+                      {file.thumbnailFilePath ? (
+                        <Image
+                          src={file.thumbnailFilePath}
+                          alt="thumbnail"
+                          fill
+                          sizes="48px"
+                          className="object-cover border rounded"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center border rounded text-xl">📄</div>
+                      )}
                     </div>
                   </li>
                 ))}
