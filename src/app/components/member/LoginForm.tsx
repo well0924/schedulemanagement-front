@@ -16,7 +16,8 @@ export default function LoginForm() {
     };
 
     const handleSocialLogin = (provider: string) => {
-        window.location.href = `http://localhost:8082/oauth2/authorization/${provider}`;
+        // 소셜 로그인 경로는 nginx가 백엔드로 넘기도록 /api 아래에 있다
+        window.location.href = `https://api.schedulemanagement.shop/api/oauth2/authorization/${provider}`;
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
