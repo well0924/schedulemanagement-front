@@ -20,33 +20,23 @@ export default function ClientHome() {
     const completed = schedules.filter(s => s.progressStatus?.value === 'COMPLETE').length;
 
 
-    // websocket 연결
+    // websocket 연결 (회원 번호는 아래에서 서버로 조회한 userId 상태를 쓴다. localStorage에는 저장되어 있지 않다)
     useEffect(() => {
-        const timer = setTimeout(() => {
-            const token = localStorage.getItem("accessToken");
-            const userId = localStorage.getItem("userId");
+        const token = localStorage.getItem("accessToken");
+        if (!token || userId === null) return;
 
-            if (!token || !userId) {
-                console.log("⏳ 토큰 없음 → WebSocket 연결 안함");
-                return;
+        const client = connectNotificationWS(userId, token, (data) => {
+            console.log("📨 알림 수신:", data);
+        });
+
+        return () => {
+            if (client?.connected) {
+                client.disconnect(() => {
+                    console.log("🛑 WebSocket 연결 종료");
+                });
             }
-
-            const client = connectNotificationWS(parseInt(userId), token, (data) => {
-                console.log("📨 알림 수신:", data);
-            });
-
-            // cleanup
-            return () => {
-                if (client) {
-                    client.disconnect(() => {
-                        console.log("🛑 WebSocket 연결 종료");
-                    });
-                }
-            };
-        }, 300); // 300~500ms
-
-        return () => clearTimeout(timer);
-    }, []);
+        };
+    }, [userId]);
 
     //Today 일정 + 유저 정보 불러오기 
     useEffect(() => {

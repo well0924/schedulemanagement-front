@@ -1,30 +1,52 @@
 'use client';
 
 import { Loader2, Send } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/app/utile/context/AuthContext';
-import { connectChatWS } from '@/app/utile/websocket/chatWebSocket'; // 새로 만든 파일
+import { ChatConnection, connectChatWS } from '@/app/utile/websocket/chatWebSocket';
 import { fetcher } from '@/app/utile/api/fetcher';
-import { CompatClient } from '@stomp/stompjs';
+import { fetchUserIdFromServer } from '@/app/utile/api/LoginApi';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
 }
 
+// 서버 ChatTokenResponse(token, done)와 같은 구조
 interface ChatTokenResponse {
-  content: string;
+  token: string;
+  done: boolean;
 }
+
+// 이 시간 동안 토큰이 하나도 오지 않으면 입력 잠금을 푼다
+const STREAM_IDLE_TIMEOUT_MS = 30_000;
 
 export default function ScheduleChatBot() {
   const { accessToken } = useAuth();
+  const [memberId, setMemberId] = useState<number | null>(null);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: '안녕하세요! 오늘 일정을 분석해 드릴까요?' }
   ]);
   const [isStreaming, setIsStreaming] = useState(false);
-  const stompClientRef = useRef<CompatClient | null>(null);
+  const connectionRef = useRef<ChatConnection | null>(null);
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // ref와 state setter만 쓰므로 한 번만 만들어 둔다 (웹소켓 콜백에서 안전하게 호출)
+  const stopStreaming = useCallback(() => {
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    idleTimerRef.current = null;
+    setIsStreaming(false);
+  }, []);
+
+  const armIdleTimer = useCallback(() => {
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    idleTimerRef.current = setTimeout(() => {
+      setMessages((prev) => [...prev, { role: 'assistant', content: '응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.' }]);
+      stopStreaming();
+    }, STREAM_IDLE_TIMEOUT_MS);
+  }, [stopStreaming]);
 
   // 스크롤 하단 고정
   const scrollToBottom = () => {
@@ -35,66 +57,76 @@ export default function ScheduleChatBot() {
     scrollToBottom();
   }, [messages]);
 
+  // 회원 번호 조회 (localStorage에는 저장되어 있지 않다)
+  useEffect(() => {
+    if (!accessToken) return;
+    fetchUserIdFromServer(accessToken)
+      .then(setMemberId)
+      .catch((err) => console.error("회원 번호 조회 실패:", err));
+  }, [accessToken]);
+
   // 웹소켓 연결
   useEffect(() => {
-    const userId = localStorage.getItem("userId");
-    if (!accessToken || !userId) return;
+    if (!accessToken || memberId === null) return;
 
-    stompClientRef.current = connectChatWS(
-      userId,
+    connectionRef.current = connectChatWS(
+      memberId,
       accessToken,
       (data: unknown) => {
-        const response = data as ChatTokenResponse;
-        const tokenChunk = response.content;
+        const { token, done } = data as ChatTokenResponse;
 
-        if (tokenChunk === "[DONE]" || !tokenChunk) {
-          setIsStreaming(false);
-          return;
+        // 토큰이 있으면 먼저 붙이고 (서버의 오류 안내 "오류 발생"도 done=true와 함께 온다)
+        if (token) {
+          setMessages((prev) => {
+            const lastMsg = prev[prev.length - 1];
+            if (lastMsg && lastMsg.role === 'assistant') {
+              return [
+                ...prev.slice(0, -1),
+                { ...lastMsg, content: lastMsg.content + token }
+              ];
+            }
+            return [...prev, { role: 'assistant', content: token }];
+          });
         }
-        setIsStreaming(true);
-        // Kafka를 통해 들어오는 한 글자(토큰)씩 누적 처리
-        setMessages((prev) => {
-          const lastMsg = prev[prev.length - 1];
-          if (lastMsg && lastMsg.role === 'assistant') {
-            return [
-              ...prev.slice(0, -1),
-              { ...lastMsg, content: lastMsg.content + tokenChunk }
-            ];
-          } else {
-            return [...prev, { role: 'assistant', content: tokenChunk }];
-          }
-        });
+
+        if (done) {
+          stopStreaming();
+        } else {
+          armIdleTimer();
+        }
       }
     );
 
     return () => {
-      if (stompClientRef.current) stompClientRef.current.disconnect();
+      connectionRef.current?.disconnect();
+      connectionRef.current = null;
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     };
-  }, [accessToken]);
+  }, [accessToken, memberId, armIdleTimer, stopStreaming]);
 
   const handleSend = async () => {
-    if (!input.trim() || isStreaming || !stompClientRef.current) return;
+    if (!input.trim() || isStreaming || memberId === null || !connectionRef.current) return;
 
     const userMsg = input.trim();
-    const userId = localStorage.getItem("userId");
 
     setMessages((prev) => [...prev, { role: 'user', content: userMsg }]);
     setInput('');
     setIsStreaming(true);
+    armIdleTimer();
 
-    // 백엔드 Kafka Producer 호출 엔드포인트로 메시지 전송
     try {
-      // 에러 포인트 3: 백엔드 Long 타입에 맞게 Number로 변환하여 전송
+      // 서버는 202(본문 없음)를 즉시 돌려주고, 답변은 웹소켓으로 보낸다
       await fetcher('/api/v1/chat/send', {
         method: 'POST',
+        autoJson: false,
         body: JSON.stringify({
-          memberId: Number(userId), // 여기서 Long 타입 규격에 맞춤
+          memberId, // 백엔드 Long 타입
           message: userMsg
         })
       });
     } catch (error) {
       console.error("전송 실패:", error);
-      setIsStreaming(false);
+      stopStreaming();
       setMessages((prev) => [...prev, { role: 'assistant', content: '메시지 전송에 실패했습니다.' }]);
     }
   };
