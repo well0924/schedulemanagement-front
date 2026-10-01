@@ -4,7 +4,7 @@ import { Notification } from '@/app/utile/interfaces/notification/NotificationMo
 import { getNotifications, getUnreadNotifications, isMarkedRead } from '@/app/utile/api/NotificationApi';
 import { useAuth } from '@/app/utile/context/AuthContext';
 import { connectNotificationWS } from '@/app/utile/websocket/websokcet';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 
 export default function NotificationBell() {
     const [open, setOpen] = useState(false);
@@ -34,41 +34,42 @@ export default function NotificationBell() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [accessToken]);
 
-    // 알림 불러오기
-    useEffect(() => {
+    // 알림 불러오기 (DB에 저장된 알림 = 읽음 처리에 쓸 실제 번호를 가진 알림)
+    const fetchNotifications = useCallback(async () => {
         if (userId === null) return;
-
-        const fetchNotifications = async () => {
-            try {
-                const allNotifications = await getNotifications(userId);
-                console.log("📦 전체 알림", allNotifications); // 👈 확인
-                const unreadNotifications = await getUnreadNotifications(userId);
-                setNotifications(allNotifications);
-                setUnreadCount(unreadNotifications.length);
-            } catch (error) {
-                console.error("알림을 불러오는 중 오류 발생:", error);
-            }
-        };
-
-        fetchNotifications();
+        try {
+            const allNotifications = await getNotifications(userId);
+            const unreadNotifications = await getUnreadNotifications(userId);
+            setNotifications(allNotifications);
+            setUnreadCount(unreadNotifications.length);
+        } catch (error) {
+            console.error("알림을 불러오는 중 오류 발생:", error);
+        }
     }, [userId]);
 
+    useEffect(() => {
+        fetchNotifications();
+    }, [fetchNotifications]);
+
     // WebSocket 연결 추가
+    // 실시간 메시지는 Kafka 이벤트 원본이라 DB 알림 번호(id)가 없다.
+    // 예전처럼 Date.now()를 번호로 넣으면 읽음 처리(PATCH /api/notice/{id}/read)가 404가 나므로,
+    // 메시지는 "새 알림이 있다"는 신호로만 쓰고 목록은 서버에서 다시 불러온다.
     useEffect(() => {
         if (!userId || !accessToken) return;
 
-        const client = connectNotificationWS(userId, accessToken, (newNotification) => {
-            setNotifications((prev) => [
-                { ...newNotification, id: newNotification.id ?? Date.now() },  // 고유값 보장
-                ...prev,
-            ]);
-            setUnreadCount((prev) => prev + 1);
+        let refetchTimer: ReturnType<typeof setTimeout> | null = null;
+        const client = connectNotificationWS(userId, accessToken, () => {
+            // 알림이 연달아 오면 한 번만 불러온다
+            if (refetchTimer) clearTimeout(refetchTimer);
+            refetchTimer = setTimeout(fetchNotifications, 300);
         });
 
         return () => {
-            client?.disconnect();
+            if (refetchTimer) clearTimeout(refetchTimer);
+            if (client?.connected) client.disconnect();
         };
-    }, [userId, accessToken]);
+    }, [userId, accessToken, fetchNotifications]);
 
 
     const handleRead = async (id: number) => {
