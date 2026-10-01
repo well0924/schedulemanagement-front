@@ -22,7 +22,7 @@ export const connectChatWS = (
   const connect = () => {
     if (closed) return;
     // 배포된 도메인 주소(Nginx)를 바라보게 설정
-    const socket = new SockJS("https://api.schedulemanagement.shop/ws");
+    const socket = new SockJS(`https://api.schedulemanagement.shop/ws?token=${encodeURIComponent(accessToken)}`);
     const stompClient = Stomp.over(socket);
     current = stompClient;
 

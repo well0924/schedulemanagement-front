@@ -18,7 +18,7 @@ export const connectNotificationWS = (
   
   let retryCount = 0;
   const connect = () => {
-    const socket = new SockJS("https://api.schedulemanagement.shop/ws");
+    const socket = new SockJS(`https://api.schedulemanagement.shop/ws?token=${encodeURIComponent(accessToken)}`);
     const stompClient = Stomp.over(socket);
 
     stompClient.debug = process.env.NODE_ENV === 'development'
