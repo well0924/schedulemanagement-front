@@ -3,6 +3,7 @@
 import { useDarkModeContext } from "@/app/utile/context/DarkModeContext";
 import { fetchLogin } from "@/app/utile/api/LoginApi";
 import { useState } from "react";
+import { API_BASE } from "@/app/utile/api/apiBase";
 
 
 export default function LoginForm() {
@@ -17,7 +18,7 @@ export default function LoginForm() {
 
     const handleSocialLogin = (provider: string) => {
         // 소셜 로그인 경로는 nginx가 백엔드로 넘기도록 /api 아래에 있다
-        window.location.href = `https://api.schedulemanagement.shop/api/oauth2/authorization/${provider}`;
+        window.location.href = `${API_BASE}/api/oauth2/authorization/${provider}`;
     }
 
     const handleSubmit = async (e: React.FormEvent) => {

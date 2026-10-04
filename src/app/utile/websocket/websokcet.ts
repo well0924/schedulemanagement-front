@@ -1,4 +1,5 @@
 import SockJS from 'sockjs-client';
+import { API_BASE } from '@/app/utile/api/apiBase';
 import { Frame, Stomp } from '@stomp/stompjs';
 import { Notification } from '@/app/utile/interfaces/notification/NotificationModel';
 
@@ -18,7 +19,7 @@ export const connectNotificationWS = (
   
   let retryCount = 0;
   const connect = () => {
-    const socket = new SockJS(`https://api.schedulemanagement.shop/ws?token=${encodeURIComponent(accessToken)}`);
+    const socket = new SockJS(`${API_BASE}/ws?token=${encodeURIComponent(accessToken)}`);
     const stompClient = Stomp.over(socket);
 
     stompClient.debug = process.env.NODE_ENV === 'development'

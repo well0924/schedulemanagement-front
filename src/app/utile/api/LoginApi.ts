@@ -1,5 +1,6 @@
 import { LoginRequest, LoginResponse } from "@/app/utile/interfaces/login/LoginModel";
 import { fetcher } from "./fetcher";
+import { API_BASE } from "./apiBase";
 
 
 //로그인 
@@ -14,7 +15,7 @@ export async function fetchLogin(data: LoginRequest): Promise<LoginResponse> {
 export async function fetchLogout(): Promise<void> {
     const token = localStorage.getItem("accessToken") || "";
     // 서버 logout은 "Bearer " 없는 원본 토큰을 받는다 (AuthService.logout)
-    await fetch("https://api.schedulemanagement.shop/api/auth/log-out", {
+    await fetch(`${API_BASE}/api/auth/log-out`, {
         method: "POST",
         headers: {
             Authorization: token,
@@ -27,7 +28,7 @@ export async function fetchLogout(): Promise<void> {
 // 재발급 응답이 401이면 다시 재발급을 호출해 무한 반복된다.
 // 서버는 body의 accessToken(만료돼도 됨)으로 사용자를 식별하고, 새 refreshToken으로 교체(rotation)한다.
 export async function fetchTokenReissue(dto: { accessToken: string; refreshToken: string }): Promise<LoginResponse> {
-    const response = await fetch("https://api.schedulemanagement.shop/api/auth/reissue", {
+    const response = await fetch(`${API_BASE}/api/auth/reissue`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dto),
@@ -51,7 +52,7 @@ export async function reissueAndStoreTokens(): Promise<string> {
 }
 
 export async function fetchUserIdFromServer(accessToken: string): Promise<number> {
-    const response = await fetch("https:/api.schedulemanagement.shop/api/auth/user-id", {
+    const response = await fetch(`${API_BASE}/api/auth/user-id`, {
         method: "GET",
         headers: {
             Authorization: accessToken, //
