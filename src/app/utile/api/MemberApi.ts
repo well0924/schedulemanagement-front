@@ -19,7 +19,7 @@ export async function MemberDetail(id:number):Promise<MemberResponse>{
 //회원 수정
 export async function MemberUpdate(id:number,data:MebmerRequest):Promise<MemberResponse>{
     return fetcher<MemberResponse>(`/api/member/${id}`,{
-        method:"PUT",
+        method:"PATCH",
         body:JSON.stringify(data),
     });
 }

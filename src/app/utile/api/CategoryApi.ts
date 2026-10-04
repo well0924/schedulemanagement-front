@@ -25,7 +25,7 @@ export async function CategoryUpdate(id: number, data: CategoryRequest): Promise
 }
 //카테고리 삭제
 export async function CategoryDelete(id: number): Promise<void> {
-    fetcher<void>(`/api/category/${id}`, {
+    return fetcher<void>(`/api/category/${id}`, {
         method: 'DELETE'
     })
 }

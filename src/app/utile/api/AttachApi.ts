@@ -1,5 +1,6 @@
 import { AttachResponse } from "@/app/utile/interfaces/attach/Attach";
 import { fetcher } from "./fetcher";
+import { API_BASE } from "./apiBase";
 
 // 전체 파일 조회
 export async function getAllAttachments() {
@@ -26,7 +27,7 @@ export async function getPresignedUploadUrls(fileNames: string[]) {
 
 // 다운로드용 presigned URL 발급
 export async function getPresignedDownloadUrl(id: number) {
-    const res = await fetch(`https://api.schedulemanagement.shop/api/attach/${id}/presigned-download-url`);
+    const res = await fetch(`${API_BASE}/api/attach/${id}/presigned-download-url`);
     if (!res.ok) throw new Error("다운로드 URL 요청 실패");
     console.log("url::"+res.text);
     return await res.text(); // ❗ text 그대로 받기

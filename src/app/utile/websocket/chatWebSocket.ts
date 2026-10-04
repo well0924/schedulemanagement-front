@@ -1,5 +1,6 @@
 import { CompatClient, Stomp } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
+import { API_BASE } from "@/app/utile/api/apiBase";
 
 const MAX_RETRY = 5;
 const RETRY_DELAY_MS = 3000;
@@ -22,7 +23,7 @@ export const connectChatWS = (
   const connect = () => {
     if (closed) return;
     // 배포된 도메인 주소(Nginx)를 바라보게 설정
-    const socket = new SockJS(`https://api.schedulemanagement.shop/ws?token=${encodeURIComponent(accessToken)}`);
+    const socket = new SockJS(`${API_BASE}/ws?token=${encodeURIComponent(accessToken)}`);
     const stompClient = Stomp.over(socket);
     current = stompClient;
 
